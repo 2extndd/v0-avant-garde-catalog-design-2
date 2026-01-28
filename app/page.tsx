@@ -1,5 +1,7 @@
 'use client'
 
+import React from "react"
+
 import { useState, useRef, useEffect } from 'react'
 import { Menu, X, ChevronRight, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -62,9 +64,9 @@ const products = [
 
 function ProductDetailModal({ product, isOpen, onClose }: { product: typeof products[0]; isOpen: boolean; onClose: () => void }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [touchStart, setTouchStart] = useState<number | null>(null)
   const relatedProducts = products.filter(p => p.id !== product.id).slice(0, 2)
   
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -82,33 +84,55 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
     }
   }, [isOpen])
   
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX)
+  }
+  
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return
+    const touchEnd = e.changedTouches[0].clientX
+    const diff = touchStart - touchEnd
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        setCurrentImageIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1))
+      } else {
+        setCurrentImageIndex((prev) => (prev === 0 ? product.images.length - 1 : prev - 1))
+      }
+    }
+    setTouchStart(null)
+  }
+  
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[100]" style={{ height: '100dvh' }}>
+    <div className="fixed inset-0 z-[100] animate-fade-in" style={{ height: '100dvh' }}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-background" onClick={onClose} />
       
-      {/* Modal Content - Scrollable */}
+      {/* Modal Content */}
       <div className="absolute inset-0 overflow-y-auto overscroll-contain" style={{ height: '100dvh' }}>
         <div className="min-h-full">
           {/* Close button */}
           <button
             onClick={onClose}
-            className="fixed top-16 md:top-4 right-4 z-[110] p-3 bg-background/90 backdrop-blur-sm hover:bg-background transition-colors border border-border"
+            className="fixed top-4 right-4 z-[110] p-3 glass hover:bg-foreground/10 transition-colors border border-border"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
           </button>
 
-          <div className="flex flex-col md:grid md:grid-cols-2">
+          <div className="flex flex-col lg:grid lg:grid-cols-2">
             {/* Image section */}
-            <div className="relative aspect-[4/5] md:sticky md:top-0 md:h-screen">
+            <div 
+              className="relative aspect-[4/5] lg:h-screen lg:sticky lg:top-0"
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
               <Image
                 src={product.images[currentImageIndex] || "/placeholder.svg"}
                 alt={product.name}
                 fill
-                className="object-cover object-center"
+                className="object-cover object-center transition-opacity duration-300"
               />
               
               {/* Image selector dots */}
@@ -118,7 +142,7 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
                     <button
                       key={idx}
                       onClick={() => setCurrentImageIndex(idx)}
-                      className={`h-2 rounded-full transition-all ${
+                      className={`h-2 rounded-full transition-all duration-300 ${
                         idx === currentImageIndex 
                           ? 'bg-foreground w-6' 
                           : 'bg-foreground/40 hover:bg-foreground/60 w-2'
@@ -134,14 +158,14 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
                 <>
                   <button
                     onClick={() => setCurrentImageIndex((prev) => (prev === 0 ? product.images.length - 1 : prev - 1))}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-background/60 backdrop-blur-sm hover:bg-background/80 transition-colors"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 glass hover:bg-foreground/10 transition-colors"
                     aria-label="Previous image"
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => setCurrentImageIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1))}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-background/60 backdrop-blur-sm hover:bg-background/80 transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 glass hover:bg-foreground/10 transition-colors"
                     aria-label="Next image"
                   >
                     <ChevronRight className="h-5 w-5" />
@@ -151,13 +175,13 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
             </div>
             
             {/* Info section */}
-            <div className="bg-background p-6 md:p-10">
+            <div className="bg-background p-6 lg:p-10 animate-fade-in-up">
               <div className="flex flex-col gap-4">
                 <div>
-                  <Badge variant="secondary" className="mb-3 text-[9px] bg-foreground/10 backdrop-blur-sm">
+                  <Badge variant="secondary" className="mb-3 text-[9px] tracking-wider glass-subtle border-0">
                     {product.condition}
                   </Badge>
-                  <h2 className="text-2xl md:text-3xl font-light leading-tight">{product.name}</h2>
+                  <h2 className="text-2xl lg:text-3xl font-light leading-tight">{product.name}</h2>
                 </div>
 
                 <div className="flex items-baseline gap-3">
@@ -166,7 +190,7 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
                       {product.originalPrice}
                     </p>
                   )}
-                  <p className="text-3xl md:text-4xl font-light">{product.price}</p>
+                  <p className="text-3xl lg:text-4xl font-light">{product.price}</p>
                 </div>
 
                 <div className="space-y-4 border-t border-border pt-4">
@@ -185,7 +209,7 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm">{product.material}</p>
+                    <p className="text-sm text-muted-foreground">{product.material}</p>
                   </div>
                 </div>
 
@@ -203,19 +227,22 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
                   <h3 className="text-[10px] tracking-wider text-muted-foreground mb-4">ВАМ МОЖЕТ ПОНРАВИТЬСЯ</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {relatedProducts.map((relatedProduct) => (
-                      <div key={relatedProduct.id} className="relative aspect-[4/5] overflow-hidden bg-card border border-border/30">
+                      <div key={relatedProduct.id} className="relative aspect-[4/5] overflow-hidden bg-card border border-border/40 hover-lift">
                         <Image
                           src={relatedProduct.image || "/placeholder.svg"}
                           alt={relatedProduct.name}
                           fill
                           className="object-cover object-center"
                         />
-                        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                        {/* Dark-only gradient overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent hidden dark:block" />
+                        {/* Light theme overlay */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-white/90 to-transparent dark:hidden" />
                         <div className="absolute bottom-0 left-0 right-0 p-2 z-10">
-                          <h4 className="text-[9px] font-light leading-tight mb-0.5 line-clamp-2">
+                          <h4 className="text-[9px] font-light leading-tight mb-0.5 line-clamp-2 text-foreground dark:text-white">
                             {relatedProduct.name}
                           </h4>
-                          <p className="text-xs font-light">{relatedProduct.price}</p>
+                          <p className="text-xs font-light text-foreground dark:text-white">{relatedProduct.price}</p>
                         </div>
                       </div>
                     ))}
@@ -234,7 +261,7 @@ function ProductCard({ product, className = '', isLarge = false, onOpen }: { pro
   return (
     <div 
       onClick={onOpen}
-        className={`group relative overflow-hidden bg-card cursor-pointer border border-border/60 ${className}`}
+      className={`group relative overflow-hidden bg-black/5 dark:bg-[#050505] cursor-pointer border border-border/50 hover-lift ${className}`}
     >
       <div className="relative w-full h-full">
         <Image
@@ -243,8 +270,9 @@ function ProductCard({ product, className = '', isLarge = false, onOpen }: { pro
           fill
           className="object-cover object-center transition-all duration-700 group-hover:scale-[1.02]"
         />
-        {/* Hover overlay with blur */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        
+        {/* Hover overlay with blur - dark only */}
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 hidden dark:block">
           <div className="absolute bottom-0 left-0 right-0 h-1/2 backdrop-blur-[3px]"
                style={{ 
                  maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
@@ -252,25 +280,28 @@ function ProductCard({ product, className = '', isLarge = false, onOpen }: { pro
                }} 
           />
         </div>
-        {/* Bottom gradient overlay */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-        {/* Bottom blur that fades */}
-        <div className="absolute bottom-0 left-0 right-0 backdrop-blur-[6px] h-[17%]"
+        
+        {/* Dark theme overlays */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent hidden dark:block" />
+        <div className="absolute bottom-0 left-0 right-0 backdrop-blur-[6px] h-[17%] hidden dark:block"
              style={{ 
                maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
                WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
              }} 
         />
+        
+        {/* Light theme overlays */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/90 to-transparent dark:hidden" />
       </div>
       
-      <div className="absolute top-3 left-3 z-10">
-        <Badge variant="secondary" className={`tracking-wider backdrop-blur-sm bg-foreground/10 border-0 ${isLarge ? 'text-[9px]' : 'text-[7px] px-1.5 py-0.5'}`}>
+      <div className="absolute top-4 left-4 z-10">
+        <Badge variant="secondary" className={`tracking-wider glass-subtle border-0 text-foreground dark:text-white ${isLarge ? 'text-[9px] px-2 py-1' : 'text-[7px] px-1.5 py-0.5'}`}>
           {product.condition}
         </Badge>
       </div>
       
-      <div className={`absolute bottom-0 left-0 right-0 z-10 ${isLarge ? 'p-3' : 'p-2'}`}>
-        <h3 className={`font-light leading-tight ${isLarge ? 'text-sm mb-1' : 'text-[9px] mb-0.5 line-clamp-2'}`}>
+      <div className={`absolute bottom-0 left-0 right-0 z-10 ${isLarge ? 'p-4' : 'p-3'}`}>
+        <h3 className={`font-light leading-tight text-foreground dark:text-white ${isLarge ? 'text-sm mb-1' : 'text-[10px] mb-0.5 line-clamp-2'}`}>
           {product.name}
         </h3>
         <div className={`flex items-baseline ${isLarge ? 'gap-2' : 'gap-1'}`}>
@@ -279,7 +310,7 @@ function ProductCard({ product, className = '', isLarge = false, onOpen }: { pro
               {product.originalPrice}
             </p>
           )}
-          <p className={`font-light ${isLarge ? 'text-xl' : 'text-xs'}`}>
+          <p className={`font-light text-foreground dark:text-white ${isLarge ? 'text-xl' : 'text-xs'}`}>
             {product.price}
           </p>
         </div>
@@ -292,7 +323,7 @@ function SmallProductCard({ product, onOpen }: { product: typeof products[0]; on
   return (
     <div 
       onClick={onOpen}
-        className="group relative overflow-hidden bg-card cursor-pointer aspect-[4/5] border border-border/60"
+      className="group relative overflow-hidden bg-black/5 dark:bg-[#050505] cursor-pointer aspect-[4/5] border border-border/50 hover-lift"
     >
       <div className="relative w-full h-full">
         <Image
@@ -301,34 +332,28 @@ function SmallProductCard({ product, onOpen }: { product: typeof products[0]; on
           fill
           className="object-cover object-center transition-all duration-700 group-hover:scale-[1.02]"
         />
-        {/* Hover overlay with blur */}
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-          <div className="absolute bottom-0 left-0 right-0 h-1/2 backdrop-blur-[3px]"
-               style={{ 
-                 maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-                 WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
-               }} 
-          />
-        </div>
-        {/* Bottom gradient overlay */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-        {/* Bottom blur that fades */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/3 backdrop-blur-[6px]"
+        
+        {/* Dark theme overlays */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent hidden dark:block" />
+        <div className="absolute bottom-0 left-0 right-0 h-1/4 backdrop-blur-[6px] hidden dark:block"
              style={{ 
                maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
                WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
              }} 
         />
+        
+        {/* Light theme overlays */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/90 to-transparent dark:hidden" />
       </div>
       
-      <div className="absolute top-3 left-3 z-10">
-        <Badge variant="secondary" className="text-[7px] px-1.5 py-0.5 tracking-wider backdrop-blur-sm bg-foreground/10 border-0">
+      <div className="absolute top-4 left-4 z-10">
+        <Badge variant="secondary" className="text-[7px] px-1.5 py-0.5 tracking-wider glass-subtle border-0 text-foreground dark:text-white">
           {product.condition}
         </Badge>
       </div>
       
-      <div className="absolute bottom-0 left-0 right-0 p-2 z-10">
-        <h3 className="text-[10px] font-light leading-tight mb-0.5 line-clamp-2">
+      <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
+        <h3 className="text-[10px] font-light leading-tight mb-0.5 line-clamp-2 text-foreground dark:text-white">
           {product.name}
         </h3>
         <div className="flex items-baseline gap-1.5">
@@ -337,7 +362,7 @@ function SmallProductCard({ product, onOpen }: { product: typeof products[0]; on
               {product.originalPrice}
             </p>
           )}
-          <p className="text-sm font-light">
+          <p className="text-sm font-light text-foreground dark:text-white">
             {product.price}
           </p>
         </div>
@@ -373,39 +398,38 @@ export default function CatalogPage() {
         <div className="ray ray-6" />
       </div>
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-xl border-b border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-14">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="lg:hidden"
-              aria-label="Toggle menu"
-            >
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+      {/* Header with glass effect */}
+      <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
+        <div className="container mx-auto px-4 xl:px-32">
+          <div className="grid grid-cols-12 items-center h-14">
+            <div className="col-span-2 lg:col-span-3">
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="lg:hidden p-2 -ml-2"
+                aria-label="Toggle menu"
+              >
+                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
             
-            <h1 className="text-sm font-[family-name:var(--font-copperplate)] tracking-[0.15em] uppercase">
-              extndd++shelter
-            </h1>
+            <div className="col-span-8 lg:col-span-6 flex justify-center">
+              <Link href="/" className="hover:opacity-70 transition-opacity">
+                <h1 className="text-sm font-[family-name:var(--font-copperplate)] tracking-[0.15em] uppercase">
+                  extndd++shelter
+                </h1>
+              </Link>
+            </div>
 
-            <nav className="hidden lg:flex items-center gap-8">
-              <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
-                TELEGRAM
-              </a>
-              <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
-                НАПИСАТЬ О ПОКУПКЕ
-              </a>
-            </nav>
-
-            <div className="lg:hidden w-5" />
+            <div className="col-span-2 lg:col-span-3 flex justify-end">
+              {/* Cart placeholder */}
+            </div>
           </div>
         </div>
       </header>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 bg-background pt-14 lg:hidden">
+        <div className="fixed inset-0 z-40 bg-background pt-14 lg:hidden animate-fade-in">
           <nav className="flex flex-col gap-6 p-6">
             <a href="#" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>
               TELEGRAM
@@ -417,20 +441,25 @@ export default function CatalogPage() {
         </div>
       )}
 
-      {/* Hero Section - Full screen image */}
-      <section className="relative h-screen w-full">
-        <Image
-          src="/images/338-2.jpeg"
-          alt="Hero"
-          fill
-          className="object-cover object-center"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/80" />
+      {/* Hero Section */}
+      <section className="relative h-[100svh] w-full">
+        <div className="absolute inset-0">
+          <Image
+            src="/images/338-2.jpeg"
+            alt="Hero"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+          {/* Dark mode gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/80 hidden dark:block" />
+          {/* Light mode gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background/60 dark:hidden" />
+        </div>
         
-        <div className="absolute inset-0 flex flex-col items-center justify-end pb-16 md:pb-24">
-          <div className="text-center px-4">
-            <p className="text-[10px] md:text-xs tracking-[0.3em] text-muted-foreground mb-2 md:mb-4">
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-16 lg:pb-24">
+          <div className="text-center px-4 animate-fade-in-up">
+            <p className="text-[10px] lg:text-xs tracking-[0.3em] text-muted-foreground mb-2 lg:mb-4">
               save my life, extndd#
             </p>
           </div>
@@ -440,77 +469,81 @@ export default function CatalogPage() {
       {/* Main Content */}
       <main className="relative z-10">
         {/* All Stock Link */}
-        <section className="container mx-auto px-4 py-6">
+        <section className="container mx-auto px-4 xl:px-32 py-6">
           <Link 
             href="/catalog" 
-            className="inline-flex items-center text-sm tracking-wider hover:opacity-70 transition-opacity underline underline-offset-4"
+            className="inline-flex items-center gap-2 text-sm tracking-wider hover:opacity-70 transition-opacity underline underline-offset-4 decoration-muted-foreground/40 hover:decoration-foreground group"
           >
-            Все наличие
+            <span>Все наличие</span>
+            <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </section>
 
-        {/* Asymmetric Grid - Mobile: 1 large + 2 small stacked */}
-        <section className="px-4 pb-4 container mx-auto relative z-10">
-          <div className="grid grid-cols-3 md:grid-cols-12 gap-1 md:gap-2">
-            {/* Product 1 - Large (2 cols, 2 rows on mobile) */}
-            <ProductCard 
-              product={products[0]} 
-              className="col-span-2 row-span-2 md:col-span-6 md:row-span-2 aspect-[4/5]" 
-              isLarge={true}
-              onOpen={() => setSelectedProduct(products[0])}
-            />
+        {/* Asymmetric Grid */}
+        <section className="px-4 xl:px-32 pb-4 container mx-auto">
+          <div className="grid grid-cols-3 md:grid-cols-12 gap-2">
+            {/* Product 1 - Large */}
+            <div className="col-span-2 row-span-2 md:col-span-6 md:row-span-2 animate-fade-in stagger-1">
+              <ProductCard 
+                product={products[0]} 
+                className="aspect-[4/5] h-full" 
+                isLarge={true}
+                onOpen={() => setSelectedProduct(products[0])}
+              />
+            </div>
 
-            {/* Product 2 - Small top right on mobile */}
-            <div className="md:col-span-3 md:row-span-1">
+            {/* Product 2 - Small */}
+            <div className="col-span-1 md:col-span-3 animate-fade-in stagger-2">
               <SmallProductCard product={products[1]} onOpen={() => setSelectedProduct(products[1])} />
             </div>
 
-            {/* Product 3 - Small bottom right on mobile */}
-            <div className="md:col-span-3 md:row-span-1">
+            {/* Product 3 - Small */}
+            <div className="col-span-1 md:col-span-3 animate-fade-in stagger-3">
               <SmallProductCard product={products[2]} onOpen={() => setSelectedProduct(products[2])} />
             </div>
 
-            {/* Text Block - Desktop only - spans 6 columns like cards above */}
-            <div className="hidden md:flex md:col-span-6 md:row-span-1 border border-border/60 bg-card/50 backdrop-blur-sm items-center justify-center p-8">
+            {/* Text Block - Desktop only */}
+            <div className="hidden md:flex md:col-span-6 glass border border-border/50 items-center justify-center p-8 animate-fade-in stagger-4">
               <div className="text-center w-full">
-                <p className="text-5xl font-light tracking-[0.35em] mb-4 font-[family-name:var(--font-copperplate)]">EXTNDD</p>
-                <p className="text-lg text-muted-foreground tracking-[0.2em]">Авангард</p>
+                <p className="text-4xl lg:text-5xl font-light tracking-[0.35em] mb-4 font-[family-name:var(--font-copperplate)]">EXTNDD</p>
+                <p className="text-base lg:text-lg text-muted-foreground tracking-[0.2em]">Авангард</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Full width card */}
-        <section className="px-4 pb-4 container mx-auto relative z-10">
+        <section className="px-4 xl:px-32 pb-4 container mx-auto">
           <ProductCard 
             product={products[3]} 
-            className="w-full aspect-[4/5] md:aspect-[21/9]" 
+            className="w-full aspect-[4/5] md:aspect-[21/9] animate-fade-in" 
             isLarge={true}
             onOpen={() => setSelectedProduct(products[3])}
           />
         </section>
 
         {/* New Arrivals Section */}
-        <section className="px-4 pb-1 container mx-auto relative z-10">
-          <h2 className="text-xs tracking-[0.2em] text-center uppercase mb-3">Новое поступления & Обновления</h2>
+        <section className="px-4 xl:px-32 py-4 container mx-auto">
+          <h2 className="text-xs tracking-[0.2em] text-center uppercase mb-4">Новое поступления & Обновления</h2>
         </section>
 
-        {/* Grid 2x2 for remaining products */}
-        <section className="px-4 pb-4 container mx-auto relative z-10">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 md:gap-2">
+        {/* Grid for products */}
+        <section className="px-4 xl:px-32 pb-4 container mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             {products.map((product, idx) => (
-              <ProductCard 
-                key={idx}
-                product={product}
-                className="aspect-[4/5]"
-                isLarge={false}
-                onOpen={() => setSelectedProduct(product)}
-              />
+              <div key={product.id} className={`animate-fade-in stagger-${(idx % 6) + 1}`}>
+                <ProductCard 
+                  product={product}
+                  className="aspect-[4/5]"
+                  isLarge={false}
+                  onOpen={() => setSelectedProduct(product)}
+                />
+              </div>
             ))}
           </div>
           
           {/* View All Button */}
-          <div className="mt-3 mb-4">
+          <div className="mt-4">
             <Link 
               href="/catalog" 
               className="block w-full py-4 border border-border text-center text-xs tracking-widest hover:bg-foreground hover:text-background transition-colors"
@@ -521,35 +554,27 @@ export default function CatalogPage() {
         </section>
 
         {/* Wide Image Block */}
-        <section className="pb-8 container mx-auto px-4 relative z-10">
-          <div className="relative w-full aspect-[21/9] overflow-hidden">
+        <section className="pb-8 container mx-auto px-4 xl:px-32">
+          <div className="relative w-full aspect-[16/9] md:aspect-[21/9] overflow-hidden">
             <Image
               src="/images/326-1.jpeg"
               alt="Collection"
               fill
               className="object-cover object-center"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent" />
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent hidden dark:block" />
+            {/* Light overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/60 via-transparent to-transparent dark:hidden" />
           </div>
         </section>
 
-        {/* Horizontal Gallery */}
-        <section className="pb-8 relative z-10">
-          <div className="container mx-auto px-4 mb-2 relative">
+        {/* Horizontal Gallery - Archive */}
+        <section className="pb-8">
+          <div className="container mx-auto px-4 xl:px-32 mb-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-light tracking-wide">Хронология</h3>
-                {/* Desktop left arrow at header level */}
-                <Button 
-                  variant="outline" 
-                  size="icon"
-                  onClick={() => scrollGallery('left')}
-                  className="hidden md:flex bg-transparent h-7 w-7"
-                >
-                  <ChevronLeft className="h-3 w-3" />
-                </Button>
-              </div>
-              <div className="flex gap-1 md:hidden">
+              <h3 className="text-sm font-light tracking-wide">Хронология</h3>
+              <div className="flex gap-1">
                 <Button 
                   variant="outline" 
                   size="icon"
@@ -567,113 +592,85 @@ export default function CatalogPage() {
                   <ChevronRight className="h-3 w-3" />
                 </Button>
               </div>
-              {/* Desktop right arrow at header level */}
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => scrollGallery('right')}
-                className="hidden md:flex bg-transparent h-7 w-7"
-              >
-                <ChevronRight className="h-3 w-3" />
-              </Button>
             </div>
           </div>
           
           <div 
             ref={galleryRef}
-            className="md:hidden flex gap-2 overflow-x-auto pb-4 px-4 scrollbar-hide snap-x snap-mandatory"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex gap-2 overflow-x-auto pb-4 px-4 xl:px-32 scrollbar-hide snap-x snap-mandatory"
           >
-            {[...products, ...products, ...products].map((product, idx) => (
-              <div key={idx} className="shrink-0 w-[calc(50vw-1rem)] snap-start cursor-pointer" onClick={() => setSelectedProduct(product)}>
-                <div className="relative aspect-[4/5] overflow-hidden bg-card border border-border/60">
+            {[...products, ...products].map((product, idx) => (
+              <div 
+                key={idx} 
+                className="shrink-0 w-[calc(50vw-1.5rem)] md:w-[calc(25vw-2rem)] lg:w-[calc(16.666vw-2rem)] snap-start cursor-pointer"
+                onClick={() => setSelectedProduct(product)}
+              >
+                <div className="relative aspect-[4/5] overflow-hidden bg-black/5 dark:bg-[#050505] border border-border/50 hover-lift">
                   <Image
                     src={product.image || "/placeholder.svg"}
                     alt={product.name}
                     fill
-                    className="object-cover object-center"
+                    className="object-cover object-top"
                   />
-                  <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 h-1/4 backdrop-blur-[4px]"
+                  {/* Dark theme overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent hidden dark:block" />
+                  <div className="absolute bottom-0 left-0 right-0 h-1/4 backdrop-blur-[4px] hidden dark:block"
                        style={{ 
                          maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
                          WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
                        }} 
                   />
-                  <div className="absolute top-3 left-3 z-10">
-                    <Badge variant="secondary" className="text-[7px] px-1.5 py-0.5 tracking-wider backdrop-blur-sm bg-foreground/10 border-0">
+                  {/* Light theme overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/90 to-transparent dark:hidden" />
+                  
+                  <div className="absolute top-4 left-4 z-10">
+                    <Badge variant="secondary" className="text-[7px] px-1.5 py-0.5 tracking-wider glass-subtle border-0 text-foreground dark:text-white">
                       {product.condition}
                     </Badge>
                   </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-2.5 z-10">
-                    <h4 className="text-[10px] font-light leading-tight mb-0.5 line-clamp-2">
+                  <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
+                    <h4 className="text-[10px] font-light leading-tight mb-0.5 line-clamp-2 text-foreground dark:text-white">
                       {product.name}
                     </h4>
-                    <p className="text-xs font-light">{product.price}</p>
+                    <p className="text-xs font-light text-foreground dark:text-white">{product.price}</p>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Desktop 6 column grid */}
-          <div className="hidden md:block container mx-auto px-4">
-            <div className="grid grid-cols-6 gap-2">
-              {[...products, ...products.slice(0, 2)].map((product, idx) => (
-                <div key={idx} className="relative aspect-[4/5] overflow-hidden bg-card border border-border/60 cursor-pointer" onClick={() => setSelectedProduct(product)}>
-                  <Image
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    fill
-                    className="object-cover object-center"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 h-1/4 backdrop-blur-[4px]"
-                       style={{ 
-                         maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-                         WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
-                       }} 
-                  />
-                  <div className="absolute top-3 left-3 z-10">
-                    <Badge variant="secondary" className="text-[9px] px-2 py-1 tracking-wider backdrop-blur-sm bg-foreground/10 border-0">
-                      {product.condition}
-                    </Badge>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
-                    <h4 className="text-xs font-light leading-tight mb-1 line-clamp-2">
-                      {product.name}
-                    </h4>
-                    <p className="text-sm font-light">{product.price}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 relative z-10">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <h3 className="text-sm font-[family-name:var(--font-copperplate)] tracking-[0.15em] uppercase mb-2">
-                extndd++shelter
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Редкий японский и европейский авангард
-              </p>
-            </div>
-            <div className="flex gap-6">
-              <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
-                TELEGRAM
-              </a>
-              <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
-                INSTAGRAM
-              </a>
+      <footer className="relative z-10 mt-8 lg:mt-12">
+        <div className="w-full border-t border-border" />
+        
+        <div className="py-4">
+          <div className="container mx-auto px-4 xl:px-32">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-[family-name:var(--font-copperplate)] tracking-[0.15em] uppercase mb-1">
+                  extndd++shelter
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Редкий японский и европейский авангард
+                </p>
+              </div>
+              <div className="flex flex-col items-start md:items-end gap-2">
+                <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
+                  TELEGRAM
+                </a>
+                <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
+                  НАПИСАТЬ О ПОКУПКЕ
+                </a>
+              </div>
             </div>
           </div>
-          <div className="mt-6 pt-6 border-t border-border">
+        </div>
+        
+        <div className="w-full border-t border-border" />
+        <div className="py-6">
+          <div className="container mx-auto px-4 xl:px-32">
             <p className="text-[10px] text-muted-foreground leading-relaxed text-center">
               powered by extnddOS v.3<br />
               build by @extndd<br />
