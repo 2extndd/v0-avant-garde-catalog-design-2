@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model products {
+  id                  Int      @id @default(autoincrement())
+  user_id             Int?     // Foreign Key to users
+  name                String
+  description         String?
+  price               String?
+  original_price      String?
+  size                String?
+  condition           String?
+  images              String?  // JSON string
+  status              String?  @default("AVAILABLE")
+  telegram_message_id Int?
+  telegram_channel_id BigInt?
+  is_featured         Boolean  @default(false)
+  layout_index        Int?     // 1, 2, 3, 5 for manual slots
+  year                String?
+  material            String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+  
+  user                users?   @relation(fields: [user_id], references: [id])
+}
+
+model LayoutConfig {
+  key   String @id
+  value String
+}
+
+model channels {
+  id          Int      @id @default(autoincrement())
+  user_id     Int?
+  title       String?
+  username    String?
+  telegram_id BigInt?  @unique
+  created_at  DateTime @default(now())
+  
+  user        users?   @relation(fields: [user_id], references: [id])
+}
+
+model settings {
+  // Bot uses: settings (user_id, key, value) with uniqueness on (user_id, key).
+  // In our DB all rows have user_id (non-null), so we model it as required.
+
+  user_id Int
+  key     String
+  value   String
+
+  user    users @relation(fields: [user_id], references: [id])
+
+  @@id([user_id, key])
+}
+
+model users {
+  id                Int      @id @default(autoincrement())
+  telegram_id       BigInt   @unique
+  telegram_username String?
+  site_slug         String?  @unique
+  project_name      String?
+  link_direct       String?
+  link_telegram     String?
+  is_registered     Int      @default(0)
+  created_at        DateTime @default(now())
+  
+  products          products[]
+  channels          channels[]
+  settings          settings[]
+}
