@@ -14,8 +14,8 @@ const products = [
   {
     id: 1,
     name: 'MULTI-POCKET CARGO PANTS',
-    price: '68 000 ₽',
-    originalPrice: '85 000 ₽',
+    price: '68 000 RUB',
+    originalPrice: '85 000 RUB',
     size: 'M-L',
     condition: 'DEADSTOCK',
     category: 'БРЮКИ',
@@ -29,7 +29,7 @@ const products = [
   {
     id: 2,
     name: 'SHEARLING JACKET BEIGE',
-    price: '180 000 ₽',
+    price: '180 000 RUB',
     size: 'S-M',
     condition: 'GRAIL',
     category: 'КУРТКИ',
@@ -43,7 +43,7 @@ const products = [
   {
     id: 3,
     name: 'LEATHER SHEARLING BOMBER',
-    price: '245 000 ₽',
+    price: '245 000 RUB',
     size: 'M',
     condition: 'ARCHIVE',
     category: 'КУРТКИ',
@@ -57,8 +57,8 @@ const products = [
   {
     id: 4,
     name: 'HOODED LEATHER JACKET',
-    price: '195 000 ₽',
-    originalPrice: '235 000 ₽',
+    price: '195 000 RUB',
+    originalPrice: '235 000 RUB',
     size: 'L',
     condition: 'DEADSTOCK',
     category: 'КУРТКИ',
@@ -72,7 +72,7 @@ const products = [
   {
     id: 5,
     name: 'VINTAGE CARGO PANTS BLACK',
-    price: '52 000 ₽',
+    price: '52 000 RUB',
     size: 'L',
     condition: 'ARCHIVE',
     category: 'БРЮКИ',
@@ -86,8 +86,8 @@ const products = [
   {
     id: 6,
     name: 'SHEARLING COAT BROWN',
-    price: '320 000 ₽',
-    originalPrice: '380 000 ₽',
+    price: '320 000 RUB',
+    originalPrice: '380 000 RUB',
     size: 'M',
     condition: 'GRAIL',
     category: 'КУРТКИ',
@@ -101,7 +101,7 @@ const products = [
   {
     id: 7,
     name: 'BOMBER JACKET DISTRESSED',
-    price: '175 000 ₽',
+    price: '175 000 RUB',
     size: 'S',
     condition: 'ARCHIVE',
     category: 'АРХИВ',
@@ -115,7 +115,7 @@ const products = [
   {
     id: 8,
     name: 'OVERSIZED LEATHER HOODIE',
-    price: '210 000 ₽',
+    price: '210 000 RUB',
     size: 'XL',
     condition: 'DEADSTOCK',
     category: 'КУРТКИ',
@@ -257,8 +257,9 @@ function ProductCard({ product, onOpen, index }: { product: typeof products[0]; 
         <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/90 to-transparent dark:hidden" />
       </div>
       
-      <div className="absolute top-3 left-3 z-10">
+      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 items-start">
         <Badge variant="secondary" className="text-[7px] px-1.5 py-0.5 tracking-wider glass-subtle border-0 text-foreground dark:text-white">{product.condition}</Badge>
+        <span className="text-[7px] tracking-wider text-foreground/40 dark:text-white/30 uppercase">{product.project}</span>
       </div>
 
       {product.originalPrice && (
@@ -388,7 +389,7 @@ export default function CatalogAllPage() {
       )}
 
       {/* Main Content */}
-      <main className={`pt-14 relative z-10 ${searchOpen ? 'pt-[7.5rem]' : ''}`}>
+      <main className="relative z-10 transition-all duration-300" style={{ paddingTop: searchOpen ? '7.5rem' : '3.5rem' }}>
         <div className="container mx-auto px-4 xl:px-32 py-6">
           <Link href="/" className="inline-flex items-center gap-2 text-sm tracking-wider hover:opacity-70 transition-opacity group mb-6">
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
