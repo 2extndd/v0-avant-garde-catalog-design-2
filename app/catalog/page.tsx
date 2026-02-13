@@ -1,9 +1,8 @@
 'use client'
 
 import React from "react"
-
 import { useState, useEffect } from 'react'
-import { Menu, X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react'
+import { Menu, X, ChevronLeft, ChevronRight, ArrowLeft, Search, Sparkles, Layers } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Image from 'next/image'
@@ -20,6 +19,7 @@ const products = [
     size: 'M-L',
     condition: 'DEADSTOCK',
     category: 'БРЮКИ',
+    project: 'EXTNDD++SHELTER',
     image: '/images/340-2.jpeg',
     images: ['/images/340-2.jpeg', '/images/326-1.jpeg', '/images/337-2.jpeg'],
     description: 'Уникальные карго брюки с множественными карманами и регулируемыми ремнями.',
@@ -33,6 +33,7 @@ const products = [
     size: 'S-M',
     condition: 'GRAIL',
     category: 'КУРТКИ',
+    project: 'EXTNDD++SHELTER',
     image: '/images/337-2.jpeg',
     images: ['/images/337-2.jpeg', '/images/340-2.jpeg'],
     description: 'Дубленка из натуральной овчины бежевого оттенка.',
@@ -46,6 +47,7 @@ const products = [
     size: 'M',
     condition: 'ARCHIVE',
     category: 'КУРТКИ',
+    project: 'EXTNDD++SHELTER',
     image: '/images/326-1.jpeg',
     images: ['/images/326-1.jpeg', '/images/338-2.jpeg'],
     description: 'Черная кожаная дубленка-бомбер с овчиной.',
@@ -60,6 +62,7 @@ const products = [
     size: 'L',
     condition: 'DEADSTOCK',
     category: 'КУРТКИ',
+    project: 'EXTNDD++SHELTER',
     image: '/images/338-2.jpeg',
     images: ['/images/338-2.jpeg', '/images/326-1.jpeg', '/images/340-2.jpeg'],
     description: 'Кожаная куртка с капюшоном оверсайз кроя.',
@@ -73,6 +76,7 @@ const products = [
     size: 'L',
     condition: 'ARCHIVE',
     category: 'БРЮКИ',
+    project: 'EXTNDD++SHELTER',
     image: '/images/340-2.jpeg',
     images: ['/images/340-2.jpeg'],
     description: 'Винтажные карго брюки в черном цвете.',
@@ -87,6 +91,7 @@ const products = [
     size: 'M',
     condition: 'GRAIL',
     category: 'КУРТКИ',
+    project: 'EXTNDD++SHELTER',
     image: '/images/337-2.jpeg',
     images: ['/images/337-2.jpeg'],
     description: 'Длинная дубленка коричневого оттенка.',
@@ -100,6 +105,7 @@ const products = [
     size: 'S',
     condition: 'ARCHIVE',
     category: 'АРХИВ',
+    project: 'EXTNDD++SHELTER',
     image: '/images/326-1.jpeg',
     images: ['/images/326-1.jpeg'],
     description: 'Бомбер с эффектом состаривания.',
@@ -113,6 +119,7 @@ const products = [
     size: 'XL',
     condition: 'DEADSTOCK',
     category: 'КУРТКИ',
+    project: 'EXTNDD++SHELTER',
     image: '/images/338-2.jpeg',
     images: ['/images/338-2.jpeg'],
     description: 'Оверсайз худи из натуральной кожи.',
@@ -121,6 +128,7 @@ const products = [
   },
 ]
 
+/* ─── Product Detail Modal ─── */
 function ProductDetailModal({ product, isOpen, onClose }: { product: typeof products[0]; isOpen: boolean; onClose: () => void }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [touchStart, setTouchStart] = useState<number | null>(null)
@@ -143,20 +151,13 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
     }
   }, [isOpen])
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX)
-  }
-  
+  const handleTouchStart = (e: React.TouchEvent) => setTouchStart(e.touches[0].clientX)
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStart === null) return
-    const touchEnd = e.changedTouches[0].clientX
-    const diff = touchStart - touchEnd
+    const diff = touchStart - e.changedTouches[0].clientX
     if (Math.abs(diff) > 50) {
-      if (diff > 0) {
-        setCurrentImageIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1))
-      } else {
-        setCurrentImageIndex((prev) => (prev === 0 ? product.images.length - 1 : prev - 1))
-      }
+      if (diff > 0) setCurrentImageIndex(p => (p === product.images.length - 1 ? 0 : p + 1))
+      else setCurrentImageIndex(p => (p === 0 ? product.images.length - 1 : p - 1))
     }
     setTouchStart(null)
   }
@@ -166,132 +167,62 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
   return (
     <div className="fixed inset-0 z-[100] animate-fade-in" style={{ height: '100dvh' }}>
       <div className="absolute inset-0 bg-background" onClick={onClose} />
-      
       <div className="absolute inset-0 overflow-y-auto overscroll-contain" style={{ height: '100dvh' }}>
         <div className="min-h-full">
-          <button
-            onClick={onClose}
-            className="fixed top-4 right-4 z-[110] p-3 glass hover:bg-foreground/10 transition-colors border border-border"
-            aria-label="Close"
-          >
+          <button onClick={onClose} className="fixed top-4 right-4 z-[110] p-3 glass hover:bg-foreground/10 transition-colors border border-border" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
-
           <div className="flex flex-col lg:grid lg:grid-cols-2">
-            <div 
-              className="relative aspect-[4/5] lg:sticky lg:top-0 lg:h-screen"
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-            >
-              <Image
-                src={product.images[currentImageIndex] || "/placeholder.svg"}
-                alt={product.name}
-                fill
-                className="object-cover object-center transition-opacity duration-300"
-              />
-              
-              {product.images.length > 1 && (
-                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                  {product.images.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentImageIndex(idx)}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        idx === currentImageIndex 
-                          ? 'bg-foreground w-6' 
-                          : 'bg-foreground/40 hover:bg-foreground/60 w-2'
-                      }`}
-                      aria-label={`View image ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
-
+            <div className="relative aspect-[4/5] lg:sticky lg:top-0 lg:h-screen" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+              <Image src={product.images[currentImageIndex] || "/placeholder.svg"} alt={product.name} fill className="object-cover object-center transition-opacity duration-300" />
               {product.images.length > 1 && (
                 <>
-                  <button
-                    onClick={() => setCurrentImageIndex((prev) => (prev === 0 ? product.images.length - 1 : prev - 1))}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-3 glass hover:bg-foreground/10 transition-colors"
-                    aria-label="Previous image"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentImageIndex((prev) => (prev === product.images.length - 1 ? 0 : prev + 1))}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-3 glass hover:bg-foreground/10 transition-colors"
-                    aria-label="Next image"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+                    {product.images.map((_, idx) => (
+                      <button key={idx} onClick={() => setCurrentImageIndex(idx)} className={`h-2 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'bg-foreground w-6' : 'bg-foreground/40 w-2'}`} aria-label={`View image ${idx + 1}`} />
+                    ))}
+                  </div>
+                  <button onClick={() => setCurrentImageIndex(p => (p === 0 ? product.images.length - 1 : p - 1))} className="absolute left-4 top-1/2 -translate-y-1/2 p-3 glass" aria-label="Previous"><ChevronLeft className="h-5 w-5" /></button>
+                  <button onClick={() => setCurrentImageIndex(p => (p === product.images.length - 1 ? 0 : p + 1))} className="absolute right-4 top-1/2 -translate-y-1/2 p-3 glass" aria-label="Next"><ChevronRight className="h-5 w-5" /></button>
                 </>
               )}
             </div>
-            
             <div className="bg-background p-6 lg:p-10 animate-fade-in-up">
               <div className="flex flex-col gap-4">
                 <div>
-                  <Badge variant="secondary" className="mb-3 text-[9px] tracking-wider glass-subtle border-0">
-                    {product.condition}
-                  </Badge>
+                  <Badge variant="secondary" className="mb-3 text-[9px] tracking-wider glass-subtle border-0">{product.condition}</Badge>
                   <h2 className="text-2xl lg:text-3xl font-light leading-tight">{product.name}</h2>
                 </div>
-
                 <div className="flex items-baseline gap-3">
-                  {product.originalPrice && (
-                    <p className="text-base text-muted-foreground line-through">
-                      {product.originalPrice}
-                    </p>
-                  )}
+                  {product.originalPrice && <p className="text-base text-muted-foreground line-through">{product.originalPrice}</p>}
                   <p className="text-3xl lg:text-4xl font-light">{product.price}</p>
                 </div>
-
                 <div className="space-y-4 border-t border-border pt-4">
                   <div>
                     <h3 className="text-[10px] tracking-wider text-muted-foreground mb-1">ОПИСАНИЕ</h3>
                     <p className="text-sm leading-relaxed">{product.description}</p>
                   </div>
                   <div className="flex gap-8">
-                    <div>
-                      <h3 className="text-[10px] tracking-wider text-muted-foreground mb-1">СОСТОЯНИЕ</h3>
-                      <p className="text-sm">{product.condition}</p>
-                    </div>
-                    <div>
-                      <h3 className="text-[10px] tracking-wider text-muted-foreground mb-1">РАЗМЕР</h3>
-                      <p className="text-sm">{product.size}</p>
-                    </div>
+                    <div><h3 className="text-[10px] tracking-wider text-muted-foreground mb-1">СОСТОЯНИЕ</h3><p className="text-sm">{product.condition}</p></div>
+                    <div><h3 className="text-[10px] tracking-wider text-muted-foreground mb-1">РАЗМЕР</h3><p className="text-sm">{product.size}</p></div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{product.material}</p>
-                  </div>
+                  <div><p className="text-sm text-muted-foreground">{product.material}</p></div>
                 </div>
-
                 <div className="flex flex-col gap-2 pt-4">
-                  <Button size="lg" className="w-full tracking-wider text-xs">
-                    СВЯЗАТЬСЯ В TELEGRAM
-                  </Button>
-                  <Button size="lg" variant="outline" className="w-full tracking-wider text-xs bg-transparent">
-                    ЗАДАТЬ ВОПРОС
-                  </Button>
+                  <Button size="lg" className="w-full tracking-wider text-xs">СВЯЗАТЬСЯ В TELEGRAM</Button>
+                  <Button size="lg" variant="outline" className="w-full tracking-wider text-xs bg-transparent">ЗАДАТЬ ВОПРОС</Button>
                 </div>
-
                 <div className="pt-6 border-t border-border mt-2">
                   <h3 className="text-[10px] tracking-wider text-muted-foreground mb-4">ВАМ МОЖЕТ ПОНРАВИТЬСЯ</h3>
                   <div className="grid grid-cols-2 gap-2">
-                    {relatedProducts.map((relatedProduct) => (
-                      <div key={relatedProduct.id} className="relative aspect-[4/5] overflow-hidden bg-card border border-border/40 hover-lift">
-                        <Image
-                          src={relatedProduct.image || "/placeholder.svg"}
-                          alt={relatedProduct.name}
-                          fill
-                          className="object-cover object-center"
-                        />
+                    {relatedProducts.map((rp) => (
+                      <div key={rp.id} className="relative aspect-[4/5] overflow-hidden bg-card border border-border/40 hover-lift">
+                        <Image src={rp.image || "/placeholder.svg"} alt={rp.name} fill className="object-cover" />
                         <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent hidden dark:block" />
                         <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-white/90 to-transparent dark:hidden" />
                         <div className="absolute bottom-0 left-0 right-0 p-2 z-10">
-                          <h4 className="text-[9px] font-light leading-tight mb-0.5 line-clamp-2 text-foreground dark:text-white">
-                            {relatedProduct.name}
-                          </h4>
-                          <p className="text-xs font-light text-foreground dark:text-white">{relatedProduct.price}</p>
+                          <h4 className="text-[9px] font-light leading-tight mb-0.5 line-clamp-2 text-foreground dark:text-white">{rp.name}</h4>
+                          <p className="text-xs font-light text-foreground dark:text-white">{rp.price}</p>
                         </div>
                       </div>
                     ))}
@@ -306,114 +237,134 @@ function ProductDetailModal({ product, isOpen, onClose }: { product: typeof prod
   )
 }
 
-function ProductCard({ product, onOpen }: { product: typeof products[0]; onOpen: () => void }) {
+/* ─── Product Card ─── */
+function ProductCard({ product, onOpen, index }: { product: typeof products[0]; onOpen: () => void; index: number }) {
   return (
-    <div 
+    <div
       onClick={onOpen}
-      className="group relative overflow-hidden bg-black/5 dark:bg-[#050505] cursor-pointer aspect-[4/5] border border-border/50 hover-lift"
+      className="group relative overflow-hidden bg-black/5 dark:bg-[#050505] cursor-pointer aspect-[4/5] border border-border/50 hover-lift animate-fade-in"
+      style={{ animationDelay: `${(index % 8) * 0.04}s`, animationFillMode: 'both' }}
     >
       <div className="relative w-full h-full">
-        <Image
-          src={product.image || "/placeholder.svg"}
-          alt={product.name}
-          fill
-          className="object-cover object-center transition-all duration-700 group-hover:scale-[1.02]"
-        />
+        <Image src={product.image || "/placeholder.svg"} alt={product.name} fill className="object-cover object-center transition-all duration-700 group-hover:scale-[1.02]" />
         {/* Dark theme overlays */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 hidden dark:block">
-          <div className="absolute bottom-0 left-0 right-0 h-1/2 backdrop-blur-[3px]"
-               style={{ 
-                 maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-                 WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
-               }} 
-          />
+          <div className="absolute bottom-0 left-0 right-0 h-1/2 backdrop-blur-[3px]" style={{ maskImage: 'linear-gradient(to top, black 0%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)' }} />
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent hidden dark:block" />
-        <div className="absolute bottom-0 left-0 right-0 h-1/4 backdrop-blur-[6px] hidden dark:block"
-             style={{ 
-               maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
-               WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
-             }} 
-        />
+        <div className="absolute bottom-0 left-0 right-0 h-1/4 backdrop-blur-[6px] hidden dark:block" style={{ maskImage: 'linear-gradient(to top, black 0%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)' }} />
         {/* Light theme overlay */}
         <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-white/90 to-transparent dark:hidden" />
       </div>
       
-      <div className="absolute top-4 left-4 z-10">
-        <Badge variant="secondary" className="text-[8px] px-1.5 py-0.5 tracking-wider glass-subtle border-0 text-foreground dark:text-white">
-          {product.condition}
-        </Badge>
+      <div className="absolute top-3 left-3 z-10">
+        <Badge variant="secondary" className="text-[7px] px-1.5 py-0.5 tracking-wider glass-subtle border-0 text-foreground dark:text-white">{product.condition}</Badge>
       </div>
+
+      {product.originalPrice && (
+        <div className="absolute top-3 right-3 z-10">
+          <div className="px-1.5 py-0.5 text-[7px] tracking-wider bg-red-500/80 text-white">SALE</div>
+        </div>
+      )}
       
       <div className="absolute bottom-0 left-0 right-0 p-3 z-10">
-        <h3 className="text-[11px] font-light leading-tight mb-0.5 line-clamp-2 text-foreground dark:text-white">
-          {product.name}
-        </h3>
+        <h3 className="text-[10px] font-light leading-tight mb-0.5 line-clamp-2 text-foreground dark:text-white">{product.name}</h3>
         <div className="flex items-baseline gap-1.5">
-          {product.originalPrice && (
-            <p className="text-[9px] text-muted-foreground/70 line-through">
-              {product.originalPrice}
-            </p>
-          )}
-          <p className="text-sm font-light text-foreground dark:text-white">
-            {product.price}
-          </p>
+          {product.originalPrice && <p className="text-[8px] text-muted-foreground/60 line-through">{product.originalPrice}</p>}
+          <p className="text-xs font-light text-foreground dark:text-white">{product.price}</p>
         </div>
+        <p className="text-[8px] text-muted-foreground/50 mt-0.5">{product.size}</p>
       </div>
     </div>
   )
 }
 
+/* ─── Main Catalog Page ─── */
 export default function CatalogAllPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeCategory, setActiveCategory] = useState('ВСЕ')
   const [showOnSale, setShowOnSale] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<typeof products[0] | null>(null)
 
   let filteredProducts = activeCategory === 'ВСЕ' 
     ? products 
     : products.filter(p => p.category === activeCategory)
   
-  if (showOnSale) {
-    filteredProducts = filteredProducts.filter(p => p.originalPrice)
+  if (showOnSale) filteredProducts = filteredProducts.filter(p => p.originalPrice)
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase()
+    filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q) || p.material.toLowerCase().includes(q))
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground relative">
-      {/* Animated Background Rays */}
+      {/* Background Rays */}
       <div className="animated-rays">
-        <div className="ray ray-1" />
-        <div className="ray ray-2" />
-        <div className="ray ray-3" />
-        <div className="ray ray-4" />
-        <div className="ray ray-5" />
-        <div className="ray ray-6" />
+        <div className="ray ray-1" /><div className="ray ray-2" /><div className="ray ray-3" /><div className="ray ray-4" /><div className="ray ray-5" /><div className="ray ray-6" />
       </div>
 
-      {/* Header with glass effect */}
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
         <div className="container mx-auto px-4 xl:px-32">
-          <div className="grid grid-cols-12 items-center h-14">
-            <div className="col-span-2 lg:col-span-3">
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="lg:hidden p-2 -ml-2"
-                aria-label="Toggle menu"
-              >
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setMenuOpen(!menuOpen)} className="lg:hidden p-2 -ml-2" aria-label="Toggle menu">
                 {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </button>
-            </div>
-            
-            <div className="col-span-8 lg:col-span-6 flex justify-center">
               <Link href="/" className="hover:opacity-70 transition-opacity">
-                <h1 className="text-sm font-[family-name:var(--font-copperplate)] tracking-[0.15em] uppercase">
-                  extndd++shelter
-                </h1>
+                <h1 className="text-sm font-[family-name:var(--font-copperplate)] tracking-[0.15em] uppercase">extndd++shelter</h1>
               </Link>
             </div>
 
-            <div className="col-span-2 lg:col-span-3 flex justify-end">
-              {/* Cart placeholder */}
+            <div className="flex items-center gap-2">
+              {/* Search toggle */}
+              <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 hover:bg-foreground/5 transition-colors" aria-label="Search">
+                <Search className="h-4 w-4" />
+              </button>
+
+              {/* View mode switcher */}
+              <div className="hidden md:flex items-center gap-px glass-subtle border border-border/50">
+                <Link href="/feed" className="px-3 py-1.5 text-[9px] tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                  ЛЕНТА
+                </Link>
+                <div className="px-3 py-1.5 text-[9px] tracking-wider text-foreground bg-foreground/10">
+                  КАТАЛОГ
+                </div>
+                <Link href="/tinder" className="px-3 py-1.5 text-[9px] tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                  <Sparkles className="h-3 w-3" />
+                </Link>
+              </div>
+
+              {/* Mobile view modes */}
+              <div className="flex md:hidden items-center gap-1">
+                <Link href="/feed" className="p-2 hover:bg-foreground/5 transition-colors" aria-label="Feed view">
+                  <Layers className="h-4 w-4 text-muted-foreground" />
+                </Link>
+                <Link href="/tinder" className="p-2 hover:bg-foreground/5 transition-colors" aria-label="Tinder view">
+                  <Sparkles className="h-4 w-4 text-muted-foreground" />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Search bar - expandable */}
+          <div className={`overflow-hidden transition-all duration-300 ${searchOpen ? 'max-h-14 opacity-100 pb-3' : 'max-h-0 opacity-0'}`}>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Поиск по названию, материалу..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 text-xs tracking-wider bg-foreground/5 border border-border/50 focus:border-foreground/30 focus:outline-none placeholder:text-muted-foreground/50 transition-colors"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -423,19 +374,21 @@ export default function CatalogAllPage() {
       {menuOpen && (
         <div className="fixed inset-0 z-40 bg-background pt-14 lg:hidden animate-fade-in">
           <nav className="flex flex-col gap-6 p-6">
-            <a href="#" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>
-              TELEGRAM
-            </a>
-            <a href="#" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>
-              НАПИСАТЬ О ПОКУПКЕ
-            </a>
+            <a href="#" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>TELEGRAM</a>
+            <a href="#" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>НАПИСАТЬ О ПОКУПКЕ</a>
+            <div className="border-t border-border pt-4">
+              <p className="text-[10px] tracking-wider text-muted-foreground mb-3">РЕЖИМЫ ПРОСМОТРА</p>
+              <div className="flex flex-col gap-3">
+                <Link href="/feed" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>ЛЕНТА</Link>
+                <Link href="/tinder" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>TINDER</Link>
+              </div>
+            </div>
           </nav>
         </div>
       )}
 
       {/* Main Content */}
-      <main className="pt-14 relative z-10">
-        {/* Back link and title */}
+      <main className={`pt-14 relative z-10 ${searchOpen ? 'pt-[7.5rem]' : ''}`}>
         <div className="container mx-auto px-4 xl:px-32 py-6">
           <Link href="/" className="inline-flex items-center gap-2 text-sm tracking-wider hover:opacity-70 transition-opacity group mb-6">
             <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
@@ -444,16 +397,16 @@ export default function CatalogAllPage() {
           
           <div className="flex items-baseline justify-between mb-4">
             <h2 className="text-2xl font-light tracking-wide">Все наличие</h2>
-            <span className="text-sm text-muted-foreground">{filteredProducts.length} вещей</span>
+            <span className="text-sm text-muted-foreground">{filteredProducts.length} {filteredProducts.length === 1 ? 'вещь' : filteredProducts.length < 5 ? 'вещи' : 'вещей'}</span>
           </div>
 
-          {/* Categories */}
+          {/* Filters */}
           <div className="flex flex-wrap gap-2 mb-6">
             {categories.map((category) => (
               <button
                 key={category}
                 onClick={() => setActiveCategory(category)}
-                className={`px-4 py-2 text-[10px] tracking-wider border transition-colors ${
+                className={`px-4 py-2 text-[10px] tracking-wider border transition-all duration-200 ${
                   activeCategory === category
                     ? 'bg-foreground text-background border-foreground'
                     : 'bg-transparent text-foreground border-border hover:border-foreground/50'
@@ -464,7 +417,7 @@ export default function CatalogAllPage() {
             ))}
             <button
               onClick={() => setShowOnSale(!showOnSale)}
-              className={`px-4 py-2 text-[10px] tracking-wider border transition-colors ${
+              className={`px-4 py-2 text-[10px] tracking-wider border transition-all duration-200 ${
                 showOnSale
                   ? 'bg-foreground text-background border-foreground'
                   : 'bg-transparent text-foreground border-border hover:border-foreground/50'
@@ -475,45 +428,40 @@ export default function CatalogAllPage() {
           </div>
         </div>
 
-        {/* Product grid */}
+        {/* Grid */}
         <div className="container mx-auto px-4 xl:px-32 pb-12">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {filteredProducts.map((product, idx) => (
-              <div key={product.id} className={`animate-fade-in stagger-${(idx % 6) + 1}`}>
-                <ProductCard product={product} onOpen={() => setSelectedProduct(product)} />
-              </div>
-            ))}
-          </div>
+          {filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1.5 md:gap-2">
+              {filteredProducts.map((product, idx) => (
+                <ProductCard key={product.id} product={product} index={idx} onOpen={() => setSelectedProduct(product)} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20">
+              <p className="text-muted-foreground text-sm mb-2">Ничего не найдено</p>
+              <p className="text-muted-foreground/50 text-xs">Попробуйте изменить фильтры или поисковый запрос</p>
+            </div>
+          )}
         </div>
       </main>
 
       {/* Footer */}
       <footer className="relative z-10 mt-8">
         <div className="w-full border-t border-border" />
-        
         <div className="py-4">
           <div className="container mx-auto px-4 xl:px-32">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h3 className="text-sm font-[family-name:var(--font-copperplate)] tracking-[0.15em] uppercase mb-1">
-                  extndd++shelter
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Редкий японский и европейский авангард
-                </p>
+                <h3 className="text-sm font-[family-name:var(--font-copperplate)] tracking-[0.15em] uppercase mb-1">extndd++shelter</h3>
+                <p className="text-xs text-muted-foreground">Редкий японский и европейский авангард</p>
               </div>
               <div className="flex flex-col items-start md:items-end gap-2">
-                <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
-                  TELEGRAM
-                </a>
-                <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
-                  НАПИСАТЬ О ПОКУПКЕ
-                </a>
+                <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">TELEGRAM</a>
+                <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">НАПИСАТЬ О ПОКУПКЕ</a>
               </div>
             </div>
           </div>
         </div>
-        
         <div className="w-full border-t border-border" />
         <div className="py-6">
           <div className="container mx-auto px-4 xl:px-32">
@@ -526,14 +474,8 @@ export default function CatalogAllPage() {
         </div>
       </footer>
 
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <ProductDetailModal 
-          product={selectedProduct} 
-          isOpen={true} 
-          onClose={() => setSelectedProduct(null)} 
-        />
-      )}
+      {/* Modal */}
+      {selectedProduct && <ProductDetailModal product={selectedProduct} isOpen={true} onClose={() => setSelectedProduct(null)} />}
     </div>
   )
 }
