@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { X, Heart, RotateCcw, ChevronLeft, ChevronRight, Sparkles, Info } from 'lucide-react'
+import { X, Heart, RotateCcw, ChevronLeft, ChevronRight, ChevronUp, Sparkles, Info, Layers, Share2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -42,7 +42,7 @@ function DetailModal({ product, onClose }: { product: typeof products[0]; onClos
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
 
   return (
-    <div className="fixed inset-0 z-[100]" style={{ height: '100dvh' }}>
+    <div className="fixed inset-0 z-[100] animate-fade-in" style={{ height: '100dvh' }}>
       <div className="absolute inset-0 bg-black/95 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-0 overflow-y-auto overscroll-contain" style={{ height: '100dvh' }}>
         <button onClick={onClose} className="fixed top-4 right-4 z-[110] p-3 backdrop-blur-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors" aria-label="Close">
@@ -80,14 +80,8 @@ function DetailModal({ product, onClose }: { product: typeof products[0]; onClos
                 <p className="text-sm leading-relaxed text-white/70">{product.description}</p>
               </div>
               <div className="flex gap-8">
-                <div>
-                  <span className="text-[9px] tracking-wider text-white/40 block mb-0.5">РАЗМЕР</span>
-                  <span className="text-sm">{product.size}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] tracking-wider text-white/40 block mb-0.5">КАТЕГОРИЯ</span>
-                  <span className="text-sm">{product.category}</span>
-                </div>
+                <div><span className="text-[9px] tracking-wider text-white/40 block mb-0.5">РАЗМЕР</span><span className="text-sm">{product.size}</span></div>
+                <div><span className="text-[9px] tracking-wider text-white/40 block mb-0.5">КАТЕГОРИЯ</span><span className="text-sm">{product.category}</span></div>
               </div>
             </div>
             <div className="flex flex-col gap-2 pt-6">
@@ -100,7 +94,7 @@ function DetailModal({ product, onClose }: { product: typeof products[0]; onClos
   )
 }
 
-/* ── Swipe Card ── */
+/* ── Swipe Card (image only, no info overlay) ── */
 function SwipeCard({ product, isTop, stackOffset, onSwipe }: {
   product: typeof products[0]; isTop: boolean; stackOffset: number
   onSwipe: (dir: 'left' | 'right') => void
@@ -109,39 +103,40 @@ function SwipeCard({ product, isTop, stackOffset, onSwipe }: {
   const [drag, setDrag] = useState({ x: 0, y: 0 })
   const [dragging, setDragging] = useState(false)
   const [exiting, setExiting] = useState<'left' | 'right' | null>(null)
-  const startRef = useRef({ x: 0, y: 0 })
+  const startRef = useRef({ x: 0, y: 0, time: 0 })
+  const elRef = useRef<HTMLDivElement>(null)
 
-  const rotation = drag.x * 0.05
+  const rotation = drag.x * 0.06
   const progress = Math.min(Math.abs(drag.x) / 100, 1)
 
   const beginDrag = useCallback((cx: number, cy: number) => {
     if (!isTop) return
     setDragging(true)
-    startRef.current = { x: cx, y: cy }
+    startRef.current = { x: cx, y: cy, time: Date.now() }
   }, [isTop])
 
   const moveDrag = useCallback((cx: number, cy: number) => {
     if (!dragging) return
-    setDrag({ x: cx - startRef.current.x, y: (cy - startRef.current.y) * 0.25 })
+    setDrag({ x: cx - startRef.current.x, y: (cy - startRef.current.y) * 0.2 })
   }, [dragging])
 
   const endDrag = useCallback(() => {
     if (!dragging) return
     setDragging(false)
-    if (Math.abs(drag.x) > 100) {
+    const vel = Math.abs(drag.x) / Math.max(Date.now() - startRef.current.time, 1)
+    if (Math.abs(drag.x) > 80 || vel > 0.5) {
       const dir = drag.x > 0 ? 'right' as const : 'left' as const
       setExiting(dir)
-      setTimeout(() => onSwipe(dir), 350)
+      setTimeout(() => onSwipe(dir), 300)
     } else {
       setDrag({ x: 0, y: 0 })
     }
   }, [dragging, drag.x, onSwipe])
 
-  // Expose swipeOut via ref
-  const elRef = useRef<HTMLDivElement>(null)
   const triggerSwipe = useCallback((dir: 'left' | 'right') => {
+    setDrag({ x: dir === 'right' ? 120 : -120, y: 0 })
     setExiting(dir)
-    setTimeout(() => onSwipe(dir), 350)
+    setTimeout(() => onSwipe(dir), 300)
   }, [onSwipe])
 
   useEffect(() => {
@@ -151,26 +146,35 @@ function SwipeCard({ product, isTop, stackOffset, onSwipe }: {
 
   useEffect(() => {
     if (!dragging) return
+    const onMove = (e: MouseEvent) => moveDrag(e.clientX, e.clientY)
+    const onTouchMove = (e: TouchEvent) => moveDrag(e.touches[0].clientX, e.touches[0].clientY)
     const end = () => endDrag()
+    window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', end)
+    window.addEventListener('touchmove', onTouchMove, { passive: true })
     window.addEventListener('touchend', end)
-    return () => { window.removeEventListener('mouseup', end); window.removeEventListener('touchend', end) }
-  }, [dragging, endDrag])
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onMove)
+      window.removeEventListener('mouseup', end)
+      window.removeEventListener('touchmove', onTouchMove)
+      window.removeEventListener('touchend', end)
+    }
+  }, [dragging, moveDrag, endDrag])
 
-  const handleTap = (e: React.MouseEvent) => {
+  const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
     if (Math.abs(drag.x) > 5 || !isTop) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const rx = (e.clientX - rect.left) / rect.width
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const clientX = 'touches' in e ? e.changedTouches[0].clientX : e.clientX
+    const rx = (clientX - rect.left) / rect.width
     if (rx < 0.35) setPhotoIdx(p => Math.max(0, p - 1))
     else if (rx > 0.65) setPhotoIdx(p => Math.min(product.images.length - 1, p + 1))
   }
 
-  const exitX = exiting === 'right' ? '130vw' : exiting === 'left' ? '-130vw' : '0'
-  const exitRot = exiting === 'right' ? 20 : exiting === 'left' ? -20 : 0
-
-  // Scale down background cards slightly
-  const scale = isTop ? 1 : Math.max(0.92, 1 - stackOffset * 0.04)
-  const yOff = isTop ? 0 : stackOffset * 8
+  const exitX = exiting === 'right' ? 'calc(50vw + 200px)' : exiting === 'left' ? 'calc(-50vw - 200px)' : '0px'
+  const exitRot = exiting === 'right' ? 15 : exiting === 'left' ? -15 : 0
+  const scale = isTop ? 1 : Math.max(0.93, 1 - stackOffset * 0.035)
+  const yOff = isTop ? 0 : stackOffset * 6
 
   return (
     <div
@@ -178,33 +182,28 @@ function SwipeCard({ product, isTop, stackOffset, onSwipe }: {
       data-card={isTop ? 'top' : 'bg'}
       className="absolute select-none touch-none"
       style={{
-        width: 'min(calc(100vw - 2.5rem), 380px)',
+        width: 'min(calc(100vw - 2rem), 360px)',
         aspectRatio: '4/5',
         left: '50%',
-        top: '50%',
+        top: '48%',
         transform: exiting
-          ? `translate(-50%, calc(-50% + ${yOff}px)) translateX(${exitX}) rotate(${exitRot}deg) scale(${scale})`
+          ? `translate(calc(-50% + ${exitX}), calc(-50% + ${yOff}px)) rotate(${exitRot}deg) scale(${scale})`
           : `translate(calc(-50% + ${drag.x}px), calc(-50% + ${drag.y + yOff}px)) rotate(${rotation}deg) scale(${scale})`,
-        transition: dragging ? 'none' : 'all 0.45s cubic-bezier(0.22,1,0.36,1)',
-        opacity: exiting ? 0 : stackOffset > 2 ? 0 : 1 - stackOffset * 0.2,
+        transition: dragging ? 'none' : 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
+        opacity: exiting ? 0 : stackOffset > 2 ? 0 : 1 - stackOffset * 0.15,
         zIndex: 10 - stackOffset,
-        filter: isTop ? 'none' : `brightness(${Math.max(0.5, 1 - stackOffset * 0.15)})`,
+        filter: isTop ? 'none' : `brightness(${Math.max(0.6, 1 - stackOffset * 0.15)})`,
         cursor: isTop ? 'grab' : 'default',
       }}
       onMouseDown={(e) => { e.preventDefault(); beginDrag(e.clientX, e.clientY) }}
-      onMouseMove={(e) => moveDrag(e.clientX, e.clientY)}
       onTouchStart={(e) => beginDrag(e.touches[0].clientX, e.touches[0].clientY)}
-      onTouchMove={(e) => moveDrag(e.touches[0].clientX, e.touches[0].clientY)}
     >
       <div className="relative w-full h-full overflow-hidden border border-white/10 bg-neutral-950" onClick={handleTap}>
         <Image src={product.images[photoIdx] || product.image} alt={product.name} fill className="object-cover pointer-events-none" draggable={false} priority={isTop} />
 
-        {/* Gradients */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/70 pointer-events-none" />
-
-        {/* Photo progress */}
+        {/* Photo progress bars */}
         {product.images.length > 1 && (
-          <div className="absolute top-2.5 left-3 right-3 flex gap-1 z-10 pointer-events-none">
+          <div className="absolute top-2 left-2.5 right-2.5 flex gap-1 z-10 pointer-events-none">
             {product.images.map((_, i) => (
               <div key={i} className="flex-1 h-[2px] rounded-full bg-white/15 overflow-hidden">
                 <div className={`h-full rounded-full transition-all duration-200 ${i <= photoIdx ? 'bg-white/70 w-full' : 'w-0'}`} />
@@ -213,25 +212,25 @@ function SwipeCard({ product, isTop, stackOffset, onSwipe }: {
           </div>
         )}
 
-        {/* Project */}
-        <div className="absolute top-7 left-3 z-10 pointer-events-none">
-          <span className="text-[8px] tracking-wider text-white/40 uppercase">{product.project}</span>
+        {/* Badge */}
+        <div className="absolute top-6 left-2.5 z-10 pointer-events-none">
+          <span className="px-1.5 py-0.5 text-[7px] tracking-wider text-white/80 bg-black/50 backdrop-blur-md border border-white/10">{product.condition}</span>
         </div>
 
         {/* Swipe overlays */}
         {isTop && progress > 0.15 && (
           <>
             {drag.x > 0 && (
-              <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center transition-opacity" style={{ opacity: progress }}>
-                <div className="absolute inset-0 border-2 border-emerald-400/30 bg-emerald-500/5" />
+              <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center" style={{ opacity: progress }}>
+                <div className="absolute inset-0 border-2 border-emerald-400/30" />
                 <div className="px-5 py-2 border-2 border-emerald-400/60 -rotate-12">
                   <span className="text-2xl font-light tracking-[0.2em] text-emerald-400">WANT</span>
                 </div>
               </div>
             )}
             {drag.x < 0 && (
-              <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center transition-opacity" style={{ opacity: progress }}>
-                <div className="absolute inset-0 border-2 border-red-400/30 bg-red-500/5" />
+              <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center" style={{ opacity: progress }}>
+                <div className="absolute inset-0 border-2 border-red-400/30" />
                 <div className="px-5 py-2 border-2 border-red-400/60 rotate-12">
                   <span className="text-2xl font-light tracking-[0.2em] text-red-400">SKIP</span>
                 </div>
@@ -239,37 +238,26 @@ function SwipeCard({ product, isTop, stackOffset, onSwipe }: {
             )}
           </>
         )}
-
-        {/* Bottom info */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 z-10 pointer-events-none">
-          <span className="inline-block px-1.5 py-0.5 border border-white/15 text-[7px] tracking-wider text-white/50 mb-1.5">{product.condition}</span>
-          <h3 className="text-sm font-light text-white leading-tight mb-0.5">{product.name}</h3>
-          <div className="flex items-baseline gap-2">
-            {product.originalPrice && <span className="text-[10px] text-white/30 line-through">{product.originalPrice}</span>}
-            <span className="text-base text-white font-light">{product.price}</span>
-          </div>
-          <div className="flex gap-3 mt-1 text-[8px] text-white/25 tracking-wider">
-            <span>{product.size}</span>
-            <span>{product.category}</span>
-          </div>
-        </div>
       </div>
     </div>
   )
 }
 
-/* ── Main Page ── */
+/* ── Main ── */
 export default function TinderPage() {
   const [idx, setIdx] = useState(0)
   const [liked, setLiked] = useState<typeof products[0][]>([])
   const [done, setDone] = useState(false)
   const [detail, setDetail] = useState<typeof products[0] | null>(null)
+  const [infoOpen, setInfoOpen] = useState(false)
   const canUndo = idx > 0
+  const current = products[idx]
 
   const handleSwipe = useCallback((dir: 'left' | 'right') => {
     if (dir === 'right') setLiked(prev => [...prev, products[idx]])
+    setInfoOpen(false)
     if (idx >= products.length - 1) {
-      setTimeout(() => setDone(true), 400)
+      setTimeout(() => setDone(true), 350)
     } else {
       setIdx(prev => prev + 1)
     }
@@ -287,14 +275,13 @@ export default function TinderPage() {
     setIdx(i => i - 1)
   }
 
-  const restart = () => { setIdx(0); setLiked([]); setDone(false) }
+  const restart = () => { setIdx(0); setLiked([]); setDone(false); setInfoOpen(false) }
 
   const triggerSwipe = (dir: 'left' | 'right') => {
     const el = document.querySelector('[data-card="top"]') as HTMLDivElement & { triggerSwipe?: (d: string) => void }
     el?.triggerSwipe?.(dir)
   }
 
-  // Visible stack: current + next 2
   const visibleCards = done ? [] : products.slice(idx, Math.min(idx + 3, products.length)).reverse()
 
   return (
@@ -316,12 +303,10 @@ export default function TinderPage() {
       {/* Card area */}
       <div className="flex-1 relative overflow-hidden">
         {done ? (
-          /* ── Done Screen ── */
-          <div className="absolute inset-0 flex items-center justify-center px-5">
+          <div className="absolute inset-0 flex items-center justify-center px-5 animate-fade-in">
             <div className="w-full max-w-sm text-center">
               <p className="text-3xl font-light tracking-[0.2em] mb-1 font-[family-name:var(--font-copperplate)]">FIN</p>
-              <p className="text-[10px] text-white/30 tracking-wider mb-6">{liked.length} saved</p>
-
+              <p className="text-[10px] text-white/30 tracking-wider mb-6">{liked.length} {'сохранено'}</p>
               {liked.length > 0 && (
                 <div className="grid grid-cols-2 gap-1.5 mb-6">
                   {liked.map(p => (
@@ -336,7 +321,6 @@ export default function TinderPage() {
                   ))}
                 </div>
               )}
-
               <div className="flex flex-col gap-2">
                 <button onClick={restart} className="py-3 text-[10px] tracking-[0.2em] border border-white/15 hover:bg-white/5 transition-colors">НАЧАТЬ ЗАНОВО</button>
                 <Link href="/catalog" className="py-3 text-[10px] tracking-[0.2em] bg-white text-black text-center hover:bg-white/90 transition-colors block">КАТАЛОГ</Link>
@@ -346,13 +330,13 @@ export default function TinderPage() {
         ) : (
           <>
             {/* Counter */}
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30">
-              <span className="text-[9px] text-white/25 tracking-wider tabular-nums">{idx + 1} / {products.length}</span>
+            <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30">
+              <span className="text-[9px] text-white/20 tracking-wider tabular-nums">{idx + 1} / {products.length}</span>
             </div>
 
-            {/* Saved counter */}
+            {/* Saved badge */}
             {liked.length > 0 && (
-              <div className="absolute top-4 right-4 z-30">
+              <div className="absolute top-3 right-4 z-30">
                 <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 backdrop-blur-xl border border-white/10">
                   <Heart className="h-3 w-3 text-emerald-400 fill-emerald-400" />
                   <span className="text-[9px] text-white/50 tabular-nums">{liked.length}</span>
@@ -362,43 +346,71 @@ export default function TinderPage() {
 
             {/* Card stack */}
             {visibleCards.map((product) => {
-              const offset = product.id === products[idx].id ? 0
-                : product.id === products[idx + 1]?.id ? 1 : 2
+              const offset = product.id === products[idx].id ? 0 : product.id === products[idx + 1]?.id ? 1 : 2
               return (
-                <SwipeCard
-                  key={product.id}
-                  product={product}
-                  isTop={offset === 0}
-                  stackOffset={offset}
-                  onSwipe={handleSwipe}
-                />
+                <SwipeCard key={product.id} product={product} isTop={offset === 0} stackOffset={offset} onSwipe={handleSwipe} />
               )
             })}
-
-            {/* Controls */}
-            <div className="absolute bottom-0 left-0 right-0 z-40" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1.25rem)' }}>
-              <div className="flex items-center justify-center gap-3 px-4">
-                {/* Undo */}
-                <button onClick={undo} disabled={!canUndo} className="p-2.5 backdrop-blur-xl bg-white/5 border border-white/10 disabled:opacity-15 hover:bg-white/10 transition-all active:scale-90">
-                  <RotateCcw className="h-4 w-4 text-white/50" />
-                </button>
-                {/* Skip */}
-                <button onClick={() => triggerSwipe('left')} className="p-3.5 backdrop-blur-xl bg-white/5 border border-red-400/15 hover:bg-red-500/10 hover:border-red-400/30 transition-all active:scale-90">
-                  <X className="h-6 w-6 text-red-400" />
-                </button>
-                {/* Want */}
-                <button onClick={() => triggerSwipe('right')} className="p-3.5 backdrop-blur-xl bg-white/5 border border-emerald-400/15 hover:bg-emerald-500/10 hover:border-emerald-400/30 transition-all active:scale-90">
-                  <Heart className="h-6 w-6 text-emerald-400" />
-                </button>
-                {/* Detail */}
-                <button onClick={() => setDetail(products[idx])} className="p-2.5 backdrop-blur-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all active:scale-90">
-                  <Info className="h-4 w-4 text-white/50" />
-                </button>
-              </div>
-            </div>
           </>
         )}
       </div>
+
+      {/* ── Info panel BELOW card ── */}
+      {!done && current && (
+        <div className="flex-shrink-0 z-40 bg-black border-t border-white/5">
+          {/* Product info */}
+          <div className="px-4 pt-3 pb-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[8px] tracking-wider text-white/25 uppercase">{current.project}</span>
+                </div>
+                <h3 className="text-sm font-light text-white leading-tight truncate">{current.name}</h3>
+                <div className="flex items-baseline gap-2 mt-0.5">
+                  {current.originalPrice && <span className="text-[10px] text-white/25 line-through">{current.originalPrice}</span>}
+                  <span className="text-base text-white font-light">{current.price}</span>
+                </div>
+              </div>
+              <span className="flex-shrink-0 px-1.5 py-0.5 text-[7px] tracking-wider text-white/50 border border-white/10 mt-0.5">{current.condition}</span>
+            </div>
+
+            {/* Expandable details */}
+            <button onClick={() => setInfoOpen(!infoOpen)} className="text-[9px] tracking-wider text-white/30 flex items-center gap-1 mt-2 hover:text-white/50 transition-colors">
+              {infoOpen ? 'СКРЫТЬ' : 'ПОДРОБНЕЕ'}
+              <ChevronUp className={`h-3 w-3 transition-transform duration-300 ${infoOpen ? '' : 'rotate-180'}`} />
+            </button>
+
+            <div className={`overflow-hidden transition-all duration-300 ease-out ${infoOpen ? 'max-h-40 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+              <div className="border border-white/5 p-3 bg-white/[0.02]">
+                <p className="text-xs text-white/50 leading-relaxed mb-2">{current.description}</p>
+                <div className="flex gap-4 text-[9px] text-white/30 tracking-wider">
+                  <span>{'Размер: '}{current.size}</span>
+                  <span>{current.material}</span>
+                  <span>{current.category}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Controls */}
+          <div className="px-4 pb-4 pt-2" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 1rem)' }}>
+            <div className="flex items-center justify-center gap-3">
+              <button onClick={undo} disabled={!canUndo} className="p-2.5 border border-white/8 disabled:opacity-15 hover:bg-white/5 transition-all active:scale-90">
+                <RotateCcw className="h-4 w-4 text-white/40" />
+              </button>
+              <button onClick={() => triggerSwipe('left')} className="p-4 border border-red-400/15 hover:bg-red-500/10 hover:border-red-400/30 transition-all active:scale-90">
+                <X className="h-6 w-6 text-red-400" />
+              </button>
+              <button onClick={() => triggerSwipe('right')} className="p-4 border border-emerald-400/15 hover:bg-emerald-500/10 hover:border-emerald-400/30 transition-all active:scale-90">
+                <Heart className="h-6 w-6 text-emerald-400" />
+              </button>
+              <button onClick={() => setDetail(current)} className="p-2.5 border border-white/8 hover:bg-white/5 transition-all active:scale-90">
+                <Info className="h-4 w-4 text-white/40" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {detail && <DetailModal product={detail} onClose={() => setDetail(null)} />}
     </div>
