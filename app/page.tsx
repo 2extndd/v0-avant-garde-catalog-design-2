@@ -437,6 +437,17 @@ export default function CatalogPage() {
             <a href="#" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>
               НАПИСАТЬ О ПОКУПКЕ
             </a>
+            <div className="border-t border-border pt-6 mt-2">
+              <p className="text-[10px] tracking-wider text-muted-foreground mb-4">РЕЖИМЫ ПРОСМОТРА</p>
+              <div className="flex flex-col gap-4">
+                <Link href="/feed" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>
+                  ЛЕНТА
+                </Link>
+                <Link href="/tinder" className="text-base tracking-wider" onClick={() => setMenuOpen(false)}>
+                  TINDER
+                </Link>
+              </div>
+            </div>
           </nav>
         </div>
       )}
@@ -663,6 +674,14 @@ export default function CatalogPage() {
                 <a href="#" className="text-xs tracking-wider hover:opacity-70 transition-opacity">
                   НАПИСАТЬ О ПОКУПКЕ
                 </a>
+                <div className="flex gap-3 mt-1">
+                  <Link href="/feed" className="text-xs tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                    ЛЕНТА
+                  </Link>
+                  <Link href="/tinder" className="text-xs tracking-wider text-muted-foreground hover:text-foreground transition-colors">
+                    TINDER
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
