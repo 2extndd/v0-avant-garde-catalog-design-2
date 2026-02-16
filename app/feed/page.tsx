@@ -64,52 +64,115 @@ const products = [
   },
 ]
 
-// Card sizes: 'lg' = 2col wide + 2row, 'md' = 1col + 2row, 'sm' = 1col + 1row
 type CardSize = 'lg' | 'md' | 'sm'
 
-// Repeating layout pattern from the screenshot - 6 columns grid
-// Each "row-group" defines card placements: [size, colStart, colSpan, rowStart, rowSpan]
-const LAYOUT_PATTERN: { size: CardSize; col: number; span: number; row: number; rspan: number }[] = [
-  // Row group 1 (rows 1-2): 1 large + 1 medium + 3 small
-  { size: 'lg', col: 1, span: 2, row: 1, rspan: 2 },
-  { size: 'md', col: 3, span: 1, row: 1, rspan: 2 },
-  { size: 'sm', col: 4, span: 1, row: 1, rspan: 1 },
-  { size: 'sm', col: 5, span: 1, row: 1, rspan: 1 },
-  { size: 'sm', col: 6, span: 1, row: 1, rspan: 1 },
-  { size: 'sm', col: 4, span: 1, row: 2, rspan: 1 },
-  { size: 'sm', col: 5, span: 1, row: 2, rspan: 1 },
-  { size: 'sm', col: 6, span: 1, row: 2, rspan: 1 },
-  // Row group 2 (rows 3-4): 3 small + 1 medium + 1 large
-  { size: 'sm', col: 1, span: 1, row: 3, rspan: 1 },
-  { size: 'sm', col: 2, span: 1, row: 3, rspan: 1 },
-  { size: 'sm', col: 3, span: 1, row: 3, rspan: 1 },
-  { size: 'md', col: 4, span: 1, row: 3, rspan: 2 },
-  { size: 'lg', col: 5, span: 2, row: 3, rspan: 2 },
-  { size: 'sm', col: 1, span: 1, row: 4, rspan: 1 },
-  { size: 'sm', col: 2, span: 1, row: 4, rspan: 1 },
-  { size: 'sm', col: 3, span: 1, row: 4, rspan: 1 },
-  // Row group 3 (rows 5-6): 1 medium + 3 small + 1 large
-  { size: 'md', col: 1, span: 1, row: 5, rspan: 2 },
-  { size: 'sm', col: 2, span: 1, row: 5, rspan: 1 },
-  { size: 'sm', col: 3, span: 1, row: 5, rspan: 1 },
-  { size: 'lg', col: 4, span: 2, row: 5, rspan: 2 },
-  { size: 'sm', col: 6, span: 1, row: 5, rspan: 1 },
-  { size: 'sm', col: 2, span: 1, row: 6, rspan: 1 },
-  { size: 'sm', col: 3, span: 1, row: 6, rspan: 1 },
-  { size: 'sm', col: 6, span: 1, row: 6, rspan: 1 },
+/*
+ * Grid system: 6 columns, rows are a fixed base unit (60px).
+ * Large card  = 2 cols, 4 base rows
+ * Medium card = 1 col,  4 base rows
+ * Small card  = 1 col,  2 base rows
+ *
+ * Pattern traced from the screenshot (each block = 8 base rows):
+ * Block A:
+ *   Large  @ col 1, row 1, span 2x4
+ *   Med    @ col 3, row 1, span 1x4
+ *   Small  @ col 4, row 1, span 1x2
+ *   Small  @ col 5, row 1, span 1x2
+ *   Small  @ col 6, row 1, span 1x2
+ *   Small  @ col 4, row 3, span 1x2
+ *   Small  @ col 5, row 3, span 1x2
+ *   Small  @ col 6, row 3, span 1x2
+ *   Small  @ col 1, row 5, span 1x2
+ *   Small  @ col 2, row 5, span 1x2
+ *   Small  @ col 3, row 5, span 1x2
+ *   Med    @ col 4, row 5, span 1x4
+ *   Large  @ col 5, row 5, span 2x4
+ *   Small  @ col 1, row 7, span 1x2
+ *   Small  @ col 2, row 7, span 1x2
+ *   Small  @ col 3, row 7, span 1x2
+ *
+ * Block B:
+ *   Med    @ col 1, row 1, span 1x4
+ *   Small  @ col 2, row 1, span 1x2
+ *   Small  @ col 3, row 1, span 1x2
+ *   Large  @ col 4, row 1, span 2x4
+ *   Small  @ col 6, row 1, span 1x2
+ *   Small  @ col 2, row 3, span 1x2
+ *   Small  @ col 3, row 3, span 1x2
+ *   Small  @ col 6, row 3, span 1x2
+ *   Small  @ col 1, row 5, span 1x2
+ *   Small  @ col 2, row 5, span 1x2
+ *   Small  @ col 3, row 5, span 1x2
+ *   Small  @ col 4, row 5, span 1x2
+ *   Med    @ col 5, row 5, span 1x4
+ *   Small  @ col 6, row 5, span 1x2
+ *   Small  @ col 1, row 7, span 1x2
+ *   Small  @ col 2, row 7, span 1x2
+ *   Small  @ col 3, row 7, span 1x2
+ *   Small  @ col 4, row 7, span 1x2
+ *   Small  @ col 6, row 7, span 1x2
+ */
+
+interface Slot {
+  size: CardSize
+  col: number
+  span: number
+  row: number
+  rspan: number
+}
+
+const BLOCK_A: Slot[] = [
+  { size: 'lg', col: 1, span: 2, row: 1, rspan: 4 },
+  { size: 'md', col: 3, span: 1, row: 1, rspan: 4 },
+  { size: 'sm', col: 4, span: 1, row: 1, rspan: 2 },
+  { size: 'sm', col: 5, span: 1, row: 1, rspan: 2 },
+  { size: 'sm', col: 6, span: 1, row: 1, rspan: 2 },
+  { size: 'sm', col: 4, span: 1, row: 3, rspan: 2 },
+  { size: 'sm', col: 5, span: 1, row: 3, rspan: 2 },
+  { size: 'sm', col: 6, span: 1, row: 3, rspan: 2 },
+  { size: 'sm', col: 1, span: 1, row: 5, rspan: 2 },
+  { size: 'sm', col: 2, span: 1, row: 5, rspan: 2 },
+  { size: 'sm', col: 3, span: 1, row: 5, rspan: 2 },
+  { size: 'md', col: 4, span: 1, row: 5, rspan: 4 },
+  { size: 'lg', col: 5, span: 2, row: 5, rspan: 4 },
+  { size: 'sm', col: 1, span: 1, row: 7, rspan: 2 },
+  { size: 'sm', col: 2, span: 1, row: 7, rspan: 2 },
+  { size: 'sm', col: 3, span: 1, row: 7, rspan: 2 },
 ]
 
-const PATTERN_ROWS = 6
-const PATTERN_ITEMS = LAYOUT_PATTERN.length
+const BLOCK_B: Slot[] = [
+  { size: 'md', col: 1, span: 1, row: 1, rspan: 4 },
+  { size: 'sm', col: 2, span: 1, row: 1, rspan: 2 },
+  { size: 'sm', col: 3, span: 1, row: 1, rspan: 2 },
+  { size: 'lg', col: 4, span: 2, row: 1, rspan: 4 },
+  { size: 'sm', col: 6, span: 1, row: 1, rspan: 2 },
+  { size: 'sm', col: 2, span: 1, row: 3, rspan: 2 },
+  { size: 'sm', col: 3, span: 1, row: 3, rspan: 2 },
+  { size: 'sm', col: 6, span: 1, row: 3, rspan: 2 },
+  { size: 'sm', col: 1, span: 1, row: 5, rspan: 2 },
+  { size: 'sm', col: 2, span: 1, row: 5, rspan: 2 },
+  { size: 'sm', col: 3, span: 1, row: 5, rspan: 2 },
+  { size: 'sm', col: 4, span: 1, row: 5, rspan: 2 },
+  { size: 'md', col: 5, span: 1, row: 5, rspan: 4 },
+  { size: 'sm', col: 6, span: 1, row: 5, rspan: 2 },
+  { size: 'sm', col: 1, span: 1, row: 7, rspan: 2 },
+  { size: 'sm', col: 2, span: 1, row: 7, rspan: 2 },
+  { size: 'sm', col: 3, span: 1, row: 7, rspan: 2 },
+  { size: 'sm', col: 4, span: 1, row: 7, rspan: 2 },
+  { size: 'sm', col: 6, span: 1, row: 7, rspan: 2 },
+]
 
-/* ── Detail Modal ── */
+const BLOCK_ROWS = 8
+const BLOCKS = [BLOCK_A, BLOCK_B]
+
+/* -- Detail Modal -- */
 function DetailModal({ product, onClose }: { product: typeof products[0]; onClose: () => void }) {
   const [imgIdx, setImgIdx] = useState(0)
   useEffect(() => { document.body.style.overflow = 'hidden'; return () => { document.body.style.overflow = '' } }, [])
 
   return (
     <div className="fixed inset-0 z-[100]" style={{ height: '100dvh' }}>
-      <div className="absolute inset-0 bg-black/95 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/95 backdrop-blur-sm" onClick={onClose} />
       <div className="absolute inset-0 overflow-y-auto overscroll-contain" style={{ height: '100dvh' }}>
         <button onClick={onClose} className="fixed top-4 right-4 z-[110] p-3 backdrop-blur-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors" aria-label="Close">
           <X className="h-5 w-5 text-white" />
@@ -150,7 +213,7 @@ function DetailModal({ product, onClose }: { product: typeof products[0]; onClos
                 <div><span className="text-[9px] tracking-wider text-white/40 block mb-0.5">КАТЕГОРИЯ</span><span className="text-sm">{product.category}</span></div>
               </div>
             </div>
-            <div className="flex flex-col gap-2 pt-6">
+            <div className="pt-6">
               <button className="w-full py-3.5 bg-white text-black text-xs tracking-[0.15em] hover:bg-white/90 transition-colors">НАПИСАТЬ О ПОКУПКЕ</button>
             </div>
           </div>
@@ -160,7 +223,7 @@ function DetailModal({ product, onClose }: { product: typeof products[0]; onClos
   )
 }
 
-/* ── Feed Card ── */
+/* -- Feed Card -- */
 function FeedCard({ product, size, onDetail, delay }: {
   product: typeof products[0]; size: CardSize; onDetail: () => void; delay: number
 }) {
@@ -173,7 +236,7 @@ function FeedCard({ product, size, onDetail, delay }: {
     if (!el) return
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) { setVisible(true); obs.disconnect() }
-    }, { threshold: 0.1 })
+    }, { threshold: 0.05 })
     obs.observe(el)
     return () => obs.disconnect()
   }, [])
@@ -186,111 +249,65 @@ function FeedCard({ product, size, onDetail, delay }: {
       className="group cursor-pointer h-full flex flex-col"
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(16px)',
-        transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
+        transform: visible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.98)',
+        transition: `opacity 0.6s cubic-bezier(0.22,1,0.36,1) ${delay}ms, transform 0.6s cubic-bezier(0.22,1,0.36,1) ${delay}ms`,
       }}
     >
-      {/* Photo 4:5 */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-neutral-950 border border-white/[0.06] flex-shrink-0" onClick={onDetail}>
-        <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out" />
+      {/* Photo */}
+      <div className="relative aspect-[4/5] overflow-hidden bg-neutral-950 flex-1 min-h-0" onClick={onDetail}>
+        <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out" sizes={isLarge ? '33vw' : '17vw'} />
 
-        {/* Badges top-left */}
-        <div className="absolute top-1.5 left-1.5 z-10 flex gap-1">
-          <span className="px-1.5 py-0.5 text-[7px] tracking-wider text-white/90 bg-black/50 backdrop-blur-sm border border-white/10">{product.condition}</span>
+        {/* Badges */}
+        <div className="absolute top-2 left-2 z-10 flex gap-1">
+          <span className="px-1.5 py-0.5 text-[7px] tracking-wider text-white/90 bg-black/60 backdrop-blur-sm border border-white/10">{product.condition}</span>
           {product.originalPrice && (
-            <span className="px-1.5 py-0.5 text-[7px] tracking-wider text-white/90 bg-black/50 backdrop-blur-sm border border-white/10">SALE</span>
+            <span className="px-1.5 py-0.5 text-[7px] tracking-wider text-white/90 bg-black/60 backdrop-blur-sm border border-white/10">SALE</span>
           )}
         </div>
 
         {/* Hover actions */}
-        <div className="hidden md:flex absolute top-1.5 right-1.5 flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
-          <button onClick={(e) => { e.stopPropagation(); setLiked(!liked) }} className={`p-1 backdrop-blur-xl border ${liked ? 'bg-white/20 border-white/30' : 'bg-black/40 border-white/10'}`}>
-            <Heart className={`h-2.5 w-2.5 ${liked ? 'fill-white text-white' : 'text-white/80'}`} />
+        <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+          <button onClick={(e) => { e.stopPropagation(); setLiked(!liked) }} className={`p-1.5 backdrop-blur-xl border transition-colors ${liked ? 'bg-white/20 border-white/30' : 'bg-black/40 border-white/10 hover:bg-white/10'}`}>
+            <Heart className={`h-3 w-3 ${liked ? 'fill-white text-white' : 'text-white/80'}`} />
           </button>
-          <button onClick={(e) => e.stopPropagation()} className="p-1 bg-black/40 backdrop-blur-xl border border-white/10">
-            <Share2 className="h-2.5 w-2.5 text-white/80" />
+          <button onClick={(e) => e.stopPropagation()} className="p-1.5 bg-black/40 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-colors">
+            <Share2 className="h-3 w-3 text-white/80" />
           </button>
         </div>
 
+        {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
       </div>
 
-      {/* Info below photo */}
-      <div className="pt-1.5 pb-0.5 flex-shrink-0" onClick={onDetail}>
+      {/* Info below */}
+      <div className="pt-2 pb-1 flex-shrink-0" onClick={onDetail}>
         {isLarge && (
-          <p className="text-[8px] tracking-[0.15em] text-white/20 mb-1 font-[family-name:var(--font-copperplate)]">
+          <p className="text-[8px] tracking-[0.15em] text-white/25 mb-1 font-[family-name:var(--font-copperplate)]">
             {'[CREATED BY EXTNDD]'}
           </p>
         )}
-        <p className="text-[7px] tracking-wider text-white/20 uppercase mb-0.5">{product.project}</p>
-        <h3 className={`tracking-wider text-white/80 leading-tight mb-0.5 group-hover:text-white transition-colors line-clamp-2 ${isLarge ? 'text-xs' : 'text-[9px]'}`}>
+        {isLarge && (
+          <p className="text-[7px] tracking-wider text-white/20 uppercase mb-0.5">{product.project}</p>
+        )}
+        <h3 className={`tracking-wider text-white/80 leading-tight mb-0.5 group-hover:text-white transition-colors line-clamp-1 ${isLarge ? 'text-[11px]' : 'text-[8px]'}`}>
+          {!isLarge && <span className="text-white/20 mr-1">{product.project}</span>}
           {product.name}
         </h3>
         <div className="flex items-baseline gap-1.5">
-          {product.originalPrice && <span className="text-[8px] text-white/25 line-through">{product.originalPrice}</span>}
-          <span className={`text-white font-light ${isLarge ? 'text-sm' : 'text-[11px]'}`}>{product.price}</span>
+          {product.originalPrice && <span className={`text-white/25 line-through ${isLarge ? 'text-[9px]' : 'text-[7px]'}`}>{product.originalPrice}</span>}
+          <span className={`text-white font-light ${isLarge ? 'text-sm' : 'text-[10px]'}`}>{product.price}</span>
         </div>
       </div>
     </div>
   )
 }
 
-/* ── Mobile Feed Card (simpler 2-col) ── */
-function MobileFeedCard({ product, onDetail, delay, variant }: {
-  product: typeof products[0]; onDetail: () => void; delay: number; variant: 'tall' | 'normal'
-}) {
-  const [visible, setVisible] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { setVisible(true); obs.disconnect() }
-    }, { threshold: 0.1 })
-    obs.observe(el)
-    return () => obs.disconnect()
-  }, [])
-
-  return (
-    <div
-      ref={ref}
-      className="group cursor-pointer break-inside-avoid mb-2"
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(12px)',
-        transition: `opacity 0.4s ease ${delay}ms, transform 0.4s ease ${delay}ms`,
-      }}
-      onClick={onDetail}
-    >
-      <div className="relative aspect-[4/5] overflow-hidden bg-neutral-950 border border-white/[0.06]">
-        <Image src={product.image} alt={product.name} fill className="object-cover" />
-        <div className="absolute top-1.5 left-1.5 z-10 flex gap-1">
-          <span className="px-1 py-0.5 text-[6px] tracking-wider text-white/90 bg-black/50 backdrop-blur-sm border border-white/10">{product.condition}</span>
-          {product.originalPrice && (
-            <span className="px-1 py-0.5 text-[6px] tracking-wider text-white/90 bg-black/50 backdrop-blur-sm border border-white/10">SALE</span>
-          )}
-        </div>
-      </div>
-      <div className="pt-1 pb-0.5">
-        <p className="text-[6px] tracking-wider text-white/15 uppercase">{product.project}</p>
-        <h3 className="text-[8px] tracking-wider text-white/80 leading-tight mb-0.5 line-clamp-2">{product.name}</h3>
-        <div className="flex items-baseline gap-1">
-          {product.originalPrice && <span className="text-[7px] text-white/25 line-through">{product.originalPrice}</span>}
-          <span className="text-[10px] text-white font-light">{product.price}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-
-/* ── Main Feed Page ── */
+/* -- Main Page -- */
 export default function FeedPage() {
   const [detail, setDetail] = useState<typeof products[0] | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [batchCount, setBatchCount] = useState(2) // how many pattern repetitions
+  const [batchCount, setBatchCount] = useState(2)
   const loaderRef = useRef<HTMLDivElement>(null)
 
   const filtered = searchQuery
@@ -301,22 +318,22 @@ export default function FeedPage() {
       )
     : products
 
-  // Build grid items from pattern, cycling through products
+  // Build desktop grid items from alternating blocks
   const gridItems = useCallback(() => {
-    const items: { product: typeof products[0]; size: CardSize; col: number; span: number; row: number; rspan: number; key: number }[] = []
+    const items: { product: typeof products[0]; size: CardSize; col: number; span: number; row: number; rspan: number; idx: number }[] = []
     let productIdx = 0
-    for (let batch = 0; batch < batchCount; batch++) {
-      const rowOffset = batch * PATTERN_ROWS
-      for (const slot of LAYOUT_PATTERN) {
-        const product = filtered[productIdx % filtered.length]
+    for (let b = 0; b < batchCount; b++) {
+      const block = BLOCKS[b % BLOCKS.length]
+      const rowOffset = b * BLOCK_ROWS
+      for (const slot of block) {
         items.push({
-          product,
+          product: filtered[productIdx % filtered.length],
           size: slot.size,
           col: slot.col,
           span: slot.span,
           row: slot.row + rowOffset,
           rspan: slot.rspan,
-          key: batch * PATTERN_ITEMS + productIdx,
+          idx: productIdx,
         })
         productIdx++
       }
@@ -336,53 +353,55 @@ export default function FeedPage() {
   }, [])
 
   const items = gridItems()
-  const totalRows = batchCount * PATTERN_ROWS
+  const totalRows = batchCount * BLOCK_ROWS
 
   return (
     <div className="min-h-[100dvh] bg-black text-white">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/70 border-b border-white/[0.06]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className="flex items-center justify-between px-3 md:px-5 h-11 md:h-12">
+        <div className="flex items-center justify-between px-3 md:px-6 h-11 md:h-12">
           <Link href="/" className="text-white/60 hover:text-white transition-colors">
-            <span className="text-[9px] md:text-[10px] font-[family-name:var(--font-copperplate)] tracking-[0.15em]">EXTNDD</span>
+            <span className="text-[9px] md:text-[11px] font-[family-name:var(--font-copperplate)] tracking-[0.15em]">EXTNDD</span>
           </Link>
-          <div className="flex items-center gap-2 md:gap-3">
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-1.5 hover:bg-white/5 transition-colors">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setSearchOpen(!searchOpen)} className="p-1.5 hover:bg-white/5 transition-colors rounded">
               <Search className={`h-3.5 w-3.5 transition-colors ${searchOpen ? 'text-white' : 'text-white/40'}`} />
             </button>
-            <div className="flex items-center bg-white/5 border border-white/[0.08]">
-              <div className="px-2.5 md:px-3 py-1.5 text-[8px] md:text-[9px] tracking-wider text-white bg-white/10">ЛЕНТА</div>
-              <Link href="/catalog" className="px-2.5 md:px-3 py-1.5 text-[8px] md:text-[9px] tracking-wider text-white/30 hover:text-white/60 transition-colors">КАТАЛОГ</Link>
-              <Link href="/tinder" className="px-2 py-1.5 text-white/30 hover:text-white/60 transition-colors">
+            <nav className="flex items-center bg-white/[0.04] border border-white/[0.08]">
+              <span className="px-3 py-1.5 text-[9px] tracking-[0.12em] text-white bg-white/10">ЛЕНТА</span>
+              <Link href="/catalog" className="px-3 py-1.5 text-[9px] tracking-[0.12em] text-white/30 hover:text-white/60 transition-colors">КАТАЛОГ</Link>
+              <Link href="/tinder" className="px-2.5 py-1.5 text-white/30 hover:text-white/60 transition-colors border-l border-white/[0.06]">
                 <Sparkles className="h-3 w-3" />
               </Link>
-            </div>
+            </nav>
           </div>
         </div>
-        <div className={`overflow-hidden transition-all duration-300 ${searchOpen ? 'max-h-11 border-t border-white/[0.06]' : 'max-h-0'}`}>
+        {/* Search expand */}
+        <div className={`overflow-hidden transition-all duration-300 ease-out ${searchOpen ? 'max-h-11 opacity-100 border-t border-white/[0.06]' : 'max-h-0 opacity-0'}`}>
           <div className="px-4 py-2.5">
             <input
               type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Поиск по названию..."
+              placeholder="Поиск..."
               className="w-full bg-transparent text-xs text-white placeholder:text-white/20 focus:outline-none"
+              autoFocus={searchOpen}
             />
           </div>
         </div>
       </header>
 
-      <main className="pt-14 md:pt-14 px-2 md:px-4" style={{ paddingTop: searchOpen ? '5.75rem' : undefined, transition: 'padding-top 0.3s ease' }}>
-        {/* Desktop: 6-column explicit grid */}
-        <div className="hidden md:block max-w-[1400px] mx-auto py-4">
+      <main className="transition-[padding] duration-300" style={{ paddingTop: searchOpen ? '5.75rem' : '3.5rem' }}>
+        {/* Desktop: 6-column grid with fixed base row height */}
+        <div className="hidden md:block max-w-[1400px] mx-auto px-4 py-4">
           <div
-            className="grid gap-2"
+            className="grid gap-1.5"
             style={{
               gridTemplateColumns: 'repeat(6, 1fr)',
-              gridTemplateRows: `repeat(${totalRows}, auto)`,
+              gridTemplateRows: `repeat(${totalRows}, 60px)`,
             }}
           >
             {items.map((item, i) => (
               <div
-                key={item.key}
+                key={`${item.idx}-${item.row}-${item.col}`}
                 style={{
                   gridColumn: `${item.col} / span ${item.span}`,
                   gridRow: `${item.row} / span ${item.rspan}`,
@@ -392,34 +411,55 @@ export default function FeedPage() {
                   product={item.product}
                   size={item.size}
                   onDetail={() => setDetail(item.product)}
-                  delay={(i % PATTERN_ITEMS) * 40}
+                  delay={(i % 16) * 30}
                 />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Mobile: 2-column masonry */}
-        <div className="md:hidden py-3">
-          <div className="columns-2 gap-1.5">
-            {filtered.concat(filtered).concat(filtered).slice(0, batchCount * 8).map((p, i) => (
-              <MobileFeedCard
-                key={`m-${i}`}
-                product={p}
-                onDetail={() => setDetail(p)}
-                delay={(i % 8) * 50}
-                variant={i % 5 === 0 ? 'tall' : 'normal'}
-              />
-            ))}
+        {/* Mobile: 2-column grid with mixed sizes */}
+        <div className="md:hidden px-1.5 py-2">
+          <div
+            className="grid gap-1"
+            style={{
+              gridTemplateColumns: 'repeat(2, 1fr)',
+              gridAutoRows: '80px',
+              gridAutoFlow: 'dense',
+            }}
+          >
+            {filtered.concat(filtered).concat(filtered).slice(0, batchCount * 8).map((p, i) => {
+              // Every 5th card is large (spans 2 cols)
+              const isLarge = i % 7 === 0
+              // Every 3rd card is medium (spans 2 rows)
+              const isMed = !isLarge && i % 3 === 0
+              const size: CardSize = isLarge ? 'lg' : isMed ? 'md' : 'sm'
+              return (
+                <div
+                  key={`m-${i}`}
+                  style={{
+                    gridColumn: isLarge ? 'span 2' : 'span 1',
+                    gridRow: (isLarge || isMed) ? 'span 4' : 'span 2',
+                  }}
+                >
+                  <FeedCard
+                    product={p}
+                    size={size}
+                    onDetail={() => setDetail(p)}
+                    delay={(i % 8) * 40}
+                  />
+                </div>
+              )
+            })}
           </div>
         </div>
 
         {/* Infinite scroll trigger */}
         <div ref={loaderRef} className="h-16 flex items-center justify-center">
           <div className="flex gap-1">
-            <div className="w-1 h-1 bg-white/20 rounded-full animate-pulse" />
-            <div className="w-1 h-1 bg-white/20 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-            <div className="w-1 h-1 bg-white/20 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+            <div className="w-1 h-1 bg-white/10 rounded-full animate-pulse" />
+            <div className="w-1 h-1 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+            <div className="w-1 h-1 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
           </div>
         </div>
       </main>
