@@ -254,7 +254,7 @@ function FeedCard({ product, size, onDetail, delay }: {
       }}
     >
       {/* Photo */}
-      <div className="relative aspect-[4/5] overflow-hidden bg-neutral-950 flex-1 min-h-0" onClick={onDetail}>
+      <div className="relative overflow-hidden bg-neutral-950 flex-1 min-h-0" onClick={onDetail}>
         <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out" sizes={isLarge ? '33vw' : '17vw'} />
 
         {/* Badges */}
